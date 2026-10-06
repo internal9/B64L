@@ -1,3 +1,8 @@
+/* TODO
+   - please learn how to *b e n c h m a r k* !!!
+   - try perfect hash function?
+ */
+
 /* NOTES
    - TBD: 'TkTypeGroup'
    - finish 'type_str'
