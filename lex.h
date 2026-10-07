@@ -67,6 +67,7 @@ enum TkType {
         KW_JMP,
         //        KW_DO_WHILE, // remove?
         KW_FN,
+        KW_REF,
 
         // literals
         LIT_CHAR,
