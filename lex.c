@@ -54,7 +54,7 @@ static const char* keywords[] = {
         "if", "elif", "else",
         "while", "for",
         "switch", "jmp",
-        "fn"
+        "fn", "ref"
 };
 
 static struct HashMap keywords_hashmap;
