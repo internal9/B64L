@@ -44,33 +44,46 @@ enum SymType {
     FUNC,
 };
 
+enum {
+	SCALAR,
+	ARRAY,
+	STRUCT
+};
+
 union DataTypeInfo {
     struct {
-        bool is_static;
         enum DataType type;
-    } scalar_var;
-
-    struct {
-        enum DataType ret_type;
-        struct Symbol **params_array;
-        int param_count;
-    } func;
+    } ty_scalar;
 
     struct {
         bool is_size_dynamic;   // if doing this, runtime size checks for safety?
         enum DataType base_type;
         int dimension_sizes[MAX_ARRAY_DIMENSION_COUNT]; // max dimension count
         int dimension_count;
-    } array;
+    } ty_array;
 
     struct {
-        // no dynamic structs
-        struct Symbol *type;
-    } struc; // yeah
+        
+    } ty_struct; // yeah
+};
+
+union SymTypeInfo {
+	union DataTypeInfo data_type_info;
+    struct {
+        enum DataType ret_type;
+        struct Symbol **params_array;
+        int param_count;
+    } func;
+
+	struct {
+
+	} label;
+
     struct {
         struct Symbol **members;
-    } struct_type;
-};
+    } struct_type_def;
+	
+}
 
 // find way to handle scope
 // super "efficient"
