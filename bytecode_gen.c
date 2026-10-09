@@ -44,23 +44,26 @@ enum SymType {
     FUNC,
 };
 
-union DataTypeInfo {
+/*
+	excluding storage class specifiers like 'dynamic', 'static'
+	things like 'int array[5]', 'struct A', 'struct {int a; num b}'
+*/
+union CompleteTypeInfo {
 	union {
 	    struct {
-	        bool is_size_dynamic;   // if doing this, runtime size checks for safety?
 	        enum DataType base_type;
 	        int dimension_sizes[MAX_ARRAY_DIMENSION_COUNT]; // max dimension count
 	        int dimension_count;
 	    } ty_array;
 		struct {
-			
-		} ty_struct_ref;	// 'struct Name'
+			bool is_ref;
+			 
+		} ty_struct;	// 'struct Name'
 		struct {
 		
 		} ty_struct_def;	// 'struct {members}'
 	} meta_info;
 	enum DataType type;
-	bool struct_is_ref;
 };
 
 union SymTypeInfo {
