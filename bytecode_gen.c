@@ -48,7 +48,7 @@ enum SymType {
 	excluding storage class specifiers like 'dynamic', 'static'
 	things like 'int array[5]', 'struct A', 'struct {int a; num b}'
 */
-union CompleteTypeInfo {
+struct CompleteDataTypeInfo {
 	union {
 	    struct {
 	        enum DataType base_type;
@@ -66,40 +66,18 @@ union CompleteTypeInfo {
 	enum DataType type;
 };
 
-union SymTypeInfo {
-	union DataTypeInfo data_type_info;
-    struct {
-        enum DataType ret_type;
-        struct Symbol **params_array;
-        int param_count;
-    } func;
-
-	struct {
-
-	} label;
-
-    struct {
-        struct Symbol **members;
-    } struct_type_def;
-	
-}
-
-
-
 // find way to handle scope
 // super "efficient"
 struct Symbol {
-    union DataTypeInfo info;
-    /* const char *id; unnecessary? */
-    const char *ident;
+	struct CompleteDataTypeInfo complete_data_type_info;
+	const char *ident;
     enum SymType type;
     long line, column;
     long addr;
-    //  const char *enclosing_func_name;
     // bool in_func;
     int block_id;   // one block id for global scope & for each fn?
     int scope_level;
-};
+}
 
 // forward reference to a fn, calling a fn that doesn't exist (presumbly declared later / typo / doesn't exist)
 struct ForwardFnCall {
