@@ -44,12 +44,6 @@ enum SymType {
     FUNC,
 };
 
-enum {
-	SCALAR,
-	ARRAY,
-	STRUCT
-};
-
 union DataTypeInfo {
 	union {
 	    struct {
@@ -60,12 +54,13 @@ union DataTypeInfo {
 	    } ty_array;
 		struct {
 			
-		} ty_struct_def;
+		} ty_struct_ref;	// 'struct Name'
 		struct {
-
-		} ty_struct_ref;
-	} info;
+		
+		} ty_struct_def;	// 'struct {members}'
+	} meta_info;
 	enum DataType type;
+	bool struct_is_ref;
 };
 
 union SymTypeInfo {
