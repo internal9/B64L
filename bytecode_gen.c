@@ -51,20 +51,21 @@ enum {
 };
 
 union DataTypeInfo {
-    struct {
-        enum DataType type;
-    } ty_scalar;
+	union {
+	    struct {
+	        bool is_size_dynamic;   // if doing this, runtime size checks for safety?
+	        enum DataType base_type;
+	        int dimension_sizes[MAX_ARRAY_DIMENSION_COUNT]; // max dimension count
+	        int dimension_count;
+	    } ty_array;
+		struct {
+			
+		} ty_struct_def;
+		struct {
 
-    struct {
-        bool is_size_dynamic;   // if doing this, runtime size checks for safety?
-        enum DataType base_type;
-        int dimension_sizes[MAX_ARRAY_DIMENSION_COUNT]; // max dimension count
-        int dimension_count;
-    } ty_array;
-
-    struct {
-        
-    } ty_struct; // yeah
+		} ty_struct_ref;
+	} info;
+	enum DataType type;
 };
 
 union SymTypeInfo {
@@ -84,6 +85,8 @@ union SymTypeInfo {
     } struct_type_def;
 	
 }
+
+
 
 // find way to handle scope
 // super "efficient"
