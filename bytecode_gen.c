@@ -31,7 +31,7 @@ static long ip;
 enum DataType {
     BOOL,
     CHAR,
-    INT,
+    INT,	// remember 'LIT_INT' exists too
     NUM,
     STRING,
     ARRAY,
@@ -69,7 +69,15 @@ struct CompleteDataTypeInfo {
 // find way to handle scope
 // super "efficient"
 struct Symbol {
-	struct CompleteDataTypeInfo complete_data_type_info;
+	union {
+		struct CompleteDataTypeInfo complete_data_type_info;
+		// might simplify structs -> one var if applicable
+		struct {
+			struct CompleteDataTypeInfo return_data_type_info;
+		} func;	// no aggregate return
+		struct {
+		} label;
+	} info;
 	const char *ident;
     enum SymType type;
     long line, column;
