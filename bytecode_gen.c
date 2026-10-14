@@ -279,6 +279,59 @@ enum {
     a,
 };
 
+static void
+read_array_dimensions(struct CompleteDataTypeInfo *p_complete_data_type_info) {
+	//int dimension_sizes[MAX_ARRAY_DIMENSION_COUNT];
+	//int dimension_count = 0;
+	while (next_tk()->type == BRACKET_L) {
+        struct Tk *p_dimension_size;
+        if ((p_dimension_size = next_tk())->type != LIT_INT) {
+            tk_err(p_dimension_size, "Array dimension size expected 'int'");
+        }
+
+        // why is an int64_t being casted to int???
+        p_complete_data_type_info->ty_array.dimension_sizes[dimension_count] = (int) tk.value.int_v;
+        if (next_tk()->type != BRACKET_R) {
+            tk_err(current_tk(), "Expected right square bracket ']'");
+        }
+        if (++p_complete_data_type_info->ty_array.dimension_count > MAX_ARRAY_DIMENSION_COUNT) {
+            tk_err(current_tk(), "Cannot exceed array max dimension count of 5");
+        }
+    }
+}
+
+
+// TODO: handle things like "int fn foo()"
+// e.g. compound literals: func(  (struct P) {1, 2, 5, 8}, (bool array[2]) {this, that}  ); 
+static void
+read_complete_data_type(union DataTypeInfo *p_complete_data_type_info, struct Tk *p_type_kw_tk) {
+    enum DataType data_type = data_type_from_kw(p_type_kw_tk->type);
+    if (data_type == ARRAY)
+        tk_err(p_type_kw_tk, "Aggregate data types can only be specified after scalar");
+
+	if (data_type == STRUCT) {
+		p_complete_data_type_info->type = STRUCT;
+	}
+	else {
+		bool is_array = next_data_type = data_type_from_kw(next_tk()->type) == ARRAY;
+		if (is_array) {
+			// Array Type
+        	p_complete_data_type_info->type = ARRAY;
+			read_array_dimensions(p_complete_data_type_info);
+   		}
+		else {
+			// Scalar Type
+			p_complete_data_type_info->type = data_type;
+		}
+	}
+}
+
+static void
+read_data_type_decl() {
+	// 'read_complete_data_type' and storage specifiers
+}
+
+
 static bool
 gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start){
     static bool R1_use = false;
