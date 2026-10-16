@@ -473,26 +473,7 @@ gen_assign(struct Tk *p_ident_tk) // or addr
 
 // NO DYNAMIC ARRAYS RN
 // syntax: 'type' ARRAY['size0']['size1']['size..'] 'name'
-static void gen_decl_array(enum DataType base_type) {
-    int dimension_sizes[MAX_ARRAY_DIMENSION_COUNT]; // change 'int' to 'int64_t' as that's the type of int literals?
-    int dimension_count = 0;
-    // lex_next(&tk == BRACKET_L)
-    while (next_tk()->type == BRACKET_L) {
-        struct Tk *p_dimension_size;
-        if ((p_dimension_size = next_tk())->type != LIT_INT) {
-            tk_err(p_dimension_size, "Array dimension size expected 'int'");
-        }
-
-        // why is an int64_t being casted to int???
-        dimension_sizes[dimension_count] = (int) tk.value.int_v;
-        if (next_tk()->type != BRACKET_R) {
-            tk_err(current_tk(), "Expected right square bracket ']'");
-        }
-        if (++dimension_count > MAX_ARRAY_DIMENSION_COUNT) {
-            tk_err(current_tk(), "Cannot exceed array max dimension count of 5");
-        }
-    }
-
+static void gen_decl_array(struct CompleteDataTypeInfo* p_complete_data_type_info) {
     struct Tk *p_tk_ident = current_tk();
 
     if (p_tk_ident->type != IDENT) {
@@ -532,49 +513,6 @@ gen_decl_scalar_var(enum DataType data_type, bool is_func_param) {
     }
     gen_assign(p_tk_ident);
 }
-
-/*
-static void
-gen_decl_array(void)
-{
-	// ARRAY['size0']['size1']['size..'] 'type' 'name'
-	int dimension_sizes[MAX_ARRAY_DIMENSION_COUNT];
-	int dimension_count = 0;
-	while (lex_next(&tk == BRACKET_L)) {
-		if (dimension_count++) > MAX_ARRAY_DIMENSION_COUNT) /* error ;
-		if (lex_next(&tk) != INT) tk_err_fmt(bla bla bla);
-		// this is sooooo
-		dimension_sizes[dimension_count - 1] = (int) tk.value.int_v;
-		if (lex_next(&tk) != BRACKET_R) tk_err_fmt(bla bla bla);
-	}
-
-	if (dimension_count == 0) /* error  ;
-	enum DataType base_type = lex_next(
-					data_type_from_kw(lex_next(&tk));
-	if (base_type == ARRAY)
-		tk_err(&tk, "Invalid base type");
-	if (lex_next(&tk) != IDENT) {
-        	tk_err(&tk, "Expected identifier");
-   	}
-	struct Symbol *p_sym = sym_push(VAR, &tk);
-	memcpy(p_sym->info.array.dimension_sizes, dimension_sizes, sizeof(int))
-	p_sym->info.array.dimension_count = dimension_count;
-	p_sym->info.array.base_type = base_type;
-
-	if (lex_next(&tk) != OP_AS) {
-		// fill array
-		return;
-	}
-
-	// assign
-}
-
-static void
-gen_decl_struct(enum TkType kw_type)
-{
-
-}
-*/
 
 /* e.g. func bool asd(bool p1, int p2) {} */
 /* can assume 'scope_level' is 0 when delcaring fn,
@@ -625,82 +563,15 @@ gen_decl_fn(void) // enum DataType ret_type)
 }
 
 // can_cast_type();
-// TODO: finish
-/* static void
-gen_decl_fn(void) // enum DataType ret_type)
-{
-    in_func = true;
-    // struct Tk *p_ident_tk;
 
-
-    enum DataType ret_type = data_type_from_kw(lex_next(&tk));
-    if (ret_type == ARRAY || ret_type == STRUCT)
-        tk_err(&tk, "Aggregate return type not allowed");
-
-
-    if (lex_next(&tk) != IDENT) // error;
-    struct Symbol *p_sym = sym_push(FUNC, &tk);
-    p_sym->info.func.ret_type = ret_type;
-    // use array instead of hashmap? hashmap_init(sym->info.func.params, (random number) 4);
-    // hashmap_init(sym->info.func.symbol_table);
-
-
-    // params
-    enum DataType param_data_type;
-    struct Symbol *p_param_sym;
-    for (int i = 0; next_tk()->type != PAREN_R; i++) {
-        param_data_type = data_type_from_kw(lex_next(&tk));
-        // if (param_data_type == -1) {// error}
-        p_param_sym = gen_decl_var(param_data_type, true);
-        // no error handling & soooo efficient
-        p_sym->info.func.params_array =
-           realloc(p_sym->info.func.params_array, sizeof(struct Symbol) * (i + 1));
-        p_sym->info.func.params_array[i] = p_param_sym;
-        // add checks for function calls preceding fn declaration
-        if (lex_next(&tk) == COMMA) continue;
-        if (tk.type == PAREN_R) break;
-        tk_err(&tk, "Expected ')' or ','");
-    }
-
-
-    emit(ip); // label
-    gen_block();
-    if (current_tk()->type != SEMICOLON_R) // error ;
-    emit(RET);
-    in_func = false;
-} */
-
-// 'is_func_param': don't default value to 'null', instead let func call handle it
-static struct Symbol *
-gen_decl_var(enum DataType data_type, bool is_func_param) {
-    switch (data_type) {
-        // 'data_type' for case 'ARRAY' acts as base type array holds
-        case ARRAY: gen_decl_array(data_type); break;
-        case STRUCT: // gen_decl_struct(is_func_param); break; /* implied static type, unless dynamically resizable */
-        default: gen_decl_scalar_var(data_type, is_func_param);
-    }
-    // ????
-    // prob handle assignments here ig
-    if (is_func_param) return NULL;
-}
-
-// handle things like "int fn foo()"
 static void
-set_data_type_info(union DataTypeInfo *data_type_info, struct Tk *p_type_kw_tk) {
-    enum DataType data_type;
-    switch (p_type_kw_tk->type) {
-        case KW_BOOL: data_type = BOOL; break;
-        case KW_CHAR: data_type = CHAR; break;
-        case KW_INT: data_type = INT; break;
-        case KW_NUM: data_type = NUM; break;
-        case KW_STRING: data_type = STRING; break;
-        case KW_ARRAY: data_type = ARRAY; break;
-        case KW_STRUCT: data_type = STRUCT; break;
-        default:
-            tk_err(p_type_kw_tk, "wut happened");
-    }
-
-
+gen_decl_var(struct CompleteDataTypeInfo* p_complete_data_type_info) {
+    if (p_complete_data_type_info->type == ARRAY)
+        gen_decl_array(p_complete_data_type_info);
+	else if (p_complete_data_type_info->type == STRUCT)
+		;	// gen_decl_struct(p_complete_data_type_info->meta_info.ty_struct);
+	else
+        gen_decl_scalar_var(p_complete_data_type_info->type);
 }
 
 static void
@@ -717,15 +588,9 @@ gen_block(void) {
             case KW_NUM:
             case KW_STRING:
             {
-                union DataTypeInfo data_type_info;
-                set_data_type_info(&data_type_info, p_tk);
-
-                switch (next_tk()->type) {
-                    case KW_ARRAY: break;
-                    case KW_FN: break;
-                    default:
-
-                }
+                struct CompleteDataTypeInfo complete_data_type_info;
+				read_complete_data_type(&complete_data_type_info, p_tk);
+				gen_decl_var(&complete_data_type_info);
                 break;
             }
             case KW_IF: // gen_if();
