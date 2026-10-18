@@ -12,6 +12,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// TODO later: simplify
+#define err_at(line, column, msg) (fprintf(stderr, "(L%ld C%ld) " msg "\n", line, column), \
+                            exit(EXIT_FAILURE))
+#define err_fmt_at(line, column, fmt, ...) (fprintf(stderr, "(L%ld C%ld) " fmt "\n", \
+                                         line, column, __VA_ARGS__), \
+                                            exit(EXIT_FAILURE))
+
 // passing pointer prob a lil unnecessary
 #define tk_err(p_tk, MSG) (fprintf(stderr, "(L%ld C%ld) " MSG "\n", (p_tk)->line, (p_tk)->column), \
                             exit(EXIT_FAILURE))
@@ -331,7 +338,7 @@ read_data_type_decl() {
 	// 'read_complete_data_type' and storage specifiers
 }
 
-
+// return final expr type after casts
 static bool
 gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start){
     static bool R1_use = false;
@@ -409,7 +416,7 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start){
         prec = op_prec(p_op->type);
     } while (prec == 3 || prec > prec_limit);
 
-    // TBD
+    // TODO: decide about this
     if (is_expr_start) {
         // memcpy(&tk, next_tk(), sizeof(struct Tk));
         // tk_buf_clear();
@@ -457,17 +464,22 @@ gen_data(long addr, enum DataType type) {
 //                       int dimension_count) {
 // }
 
+// or just pass in 'p_sym' lol
 static void
-gen_assign(struct Tk *p_ident_tk) // or addr
+gen_assign(struct Tk *p_ident_tk)
 {
     struct Symbol *p_sym = sym_get(p_ident_tk);
+	if (p_sym == NULL)
+		tk_err(p_ident_tk, "Identifier sym doesn't exist");
+		
     switch (p_sym->type) {
         case ARRAY: /* gen_array(p_sym->addr, p_sym->info.array.base_type,
                               p_sym->info.array.dimension_count); */
                     break;
         case STRUCT: // gen_struct(p_sym->addr); break;
-        default: gen_expr_start(next_tk()); break;
-
+		case LABEL: tk_err(p_ident_tk, "Cannot assign to label");
+		case FUNC: tk_err(p_ident_tk, "Cannot assign to function");
+        default: gen_expr_start(next_tk());
     }
 }
 
@@ -499,19 +511,20 @@ static void gen_decl_array(struct CompleteDataTypeInfo* p_complete_data_type_inf
 // handle scope
 static void
 gen_decl_scalar_var(enum DataType data_type, bool is_func_param) {
-    struct Tk *p_tk_ident = current_tk();
+    struct Tk *p_tk_ident = next_tk();
     if (p_tk_ident->type != IDENT)
         tk_err(p_tk_ident, "Expected identifier");
+	
     struct Symbol *p_sym = sym_push(VAR, p_tk_ident);
     p_sym->info.scalar_var.type = data_type;
 
-    if (lex_next(&tk) != OP_AS) {
+    if (next_tk()->type != OP_AS) {
         // value is garbage
         // OR
         // gen_null(addr);
         return;
     }
-    gen_assign(p_tk_ident);
+    gen_assign(p_sym);
 }
 
 /* e.g. func bool asd(bool p1, int p2) {} */
@@ -571,7 +584,7 @@ gen_decl_var(struct CompleteDataTypeInfo* p_complete_data_type_info) {
 	else if (p_complete_data_type_info->type == STRUCT)
 		;	// gen_decl_struct(p_complete_data_type_info->meta_info.ty_struct);
 	else
-        gen_decl_scalar_var(p_complete_data_type_info->type);
+        gen_decl_scalar_var(p_complete_data_type_info);
 }
 
 static void
