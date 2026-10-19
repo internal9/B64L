@@ -448,8 +448,8 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p
     return true;
 }
 
-#define gen_expr_start(p_left_tk) gen_expr(p_left_tk, 0, true, NULL)
-// account for floating-points later, cuz fp regs
+#define gen_expr_start(p_left_tk, p_expr_result_data_type) gen_expr(p_left_tk, 0, true, p_expr_result_data_type)
+// TODO: account for floating-points later, cuz fp regs
 
 
 static void
