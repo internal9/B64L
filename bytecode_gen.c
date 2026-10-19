@@ -486,7 +486,8 @@ gen_assign(struct Tk *p_ident_tk)
 
 // NO DYNAMIC ARRAYS RN
 // syntax: 'type' ARRAY['size0']['size1']['size..'] 'name'
-static void gen_decl_array(struct CompleteDataTypeInfo* p_complete_data_type_info) {
+static void
+gen_decl_array(struct CompleteDataTypeInfo* p_complete_data_type_info) {
     struct Tk *p_tk_ident = current_tk();
     if (p_tk_ident->type != IDENT) {
         tk_err(p_tk_ident, "Array: Expected identifier");
