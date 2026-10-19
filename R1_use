@@ -228,23 +228,6 @@ sym_pop(int count) // struct Tk* p_ident_tk) ?
     return true;
 }
 
-/*
-void gen_from_ident(struct Tk *p_tk, bool allow_standalone)
-{
-        switch (lex_next(&tk)) {
-        case PAREN_L:
-        case BRACKET_L:
-        case PERIOD:
-        case INC:
-        case DEC:
-        default:
-                if (!allow_standalone) {}
-                        ; // error(id cannot be by itself);
-        }
-}
-*/
-
-
 static inline int op_prec(enum TkType tk_type) {
     switch (tk_type) {
         case OP_ADD:
@@ -358,9 +341,15 @@ read_data_type_decl() {
 	// 'read_complete_data_type' and storage specifiers
 }
 
-// return final expr type after casts
+static void
+cast()
+{
+
+}
+
+// 'p_expr_data_type' is final type of expr after implicit casts e.g. 'int + float' -> expr evaluates to value of type 'float'
 static bool
-gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start){
+gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p_expr_result_data_type){
     static bool R1_use = false;
 
     // temp
@@ -369,20 +358,40 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start){
 
     bool is_left_expr = false;
     switch (p_left->type) {
-        case LIT_TRUE: emit(0b10000000 | MOV); emit(1); //emit("MOV R1, 1")
+        case LIT_TRUE: // emit(0b10000000 | MOV); emit(1); //emit("MOV R1, 1")
         case LIT_FALSE:
         case LIT_CHAR:
         case LIT_INT: break;
         case LIT_NUM:
         case LIT_STR:
-        case PAREN_L:
-            is_left_expr = gen_expr(next_tk(), 0, false);
-            if (!is_left_expr)
-                p_left = current_tk(); // i hate it, since only literal retrieve that
-            struct Tk *p_tk = next_tk();
-            if (p_tk->type != PAREN_R)
-                tk_err(p_tk, "Expected ')'");
+        case PAREN_L: {
+			// if any data type kw, assume explicit cast (prob scalar only for now) OR compound literal e.g. '(int)'
+			if (data_type_from_kw(next_tk()->type != -1) {
+				struct CompleteDataTypeInfo cast_data_type_info;
+				read_complete_data_type(&cast_data_type_info, current_tk());
+				switch (cast_data_type_info->type) {
+					// TBD: allow cast 'int' &/or 'char' to 'string'?
+					case STRING: tk_err("Explicit cast to string not allowed");
+					// Assume compound literal decl's
+					case ARRAY: break;
+					case STRUCT: break;
+					// Cast
+					default: {
+
+						if (peek_tk()->type != PAREN_R) tk_err("Expected enclosing ')' for explicit cast");
+					}
+				}
+			}
+			else {
+	            is_left_expr = gen_expr(next_tk(), 0, false);
+	            if (!is_left_expr)
+	                p_left = current_tk(); // i hate it, since only literal retrieve that
+	            struct Tk *p_tk = next_tk();
+	            if (p_tk->type != PAREN_R)
+	                tk_err(p_tk, "Expected ')'");
+			}
             break;
+		}
         // andd the rest for later
         default:
             // handle non-expr tk
@@ -444,7 +453,7 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start){
     return true;
 }
 
-#define gen_expr_start(p_left_tk) gen_expr(p_left_tk, 0, true)
+#define gen_expr_start(p_left_tk) gen_expr(p_left_tk, 0, true, NULL)
 // account for floating-points later, cuz fp regs
 
 
@@ -474,12 +483,12 @@ gen_assign(struct Tk *p_ident_tk)
 		tk_err(p_ident_tk, "Identifier sym doesn't exist");
 
     switch (p_sym->type) {
+		case LABEL: tk_err(p_ident_tk, "Cannot assign to label");
+		case FUNC: tk_err(p_ident_tk, "Cannot assign to function");
         case ARRAY: /* gen_array(p_sym->addr, p_sym->info.array.base_type,
                               p_sym->info.array.dimension_count); */
                     break;
         case STRUCT: // gen_struct(p_sym->addr); break;
-		case LABEL: tk_err(p_ident_tk, "Cannot assign to label");
-		case FUNC: tk_err(p_ident_tk, "Cannot assign to function");
         default: gen_expr_start(next_tk());
     }
 }
@@ -501,9 +510,9 @@ gen_decl_array(struct CompleteDataTypeInfo* p_complete_data_type_info) {
         return;
     }
 
+	gen_assign(p_tk_ident);
     // remove?
     next_tk();// remove?
-    // assign
 }
 
 
