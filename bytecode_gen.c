@@ -275,18 +275,6 @@ data_type_from_kw(enum TkType kw_type) {
 
 // unnamed aggregate objects allowed (e.g. func((int) {'a', 2, 5}); func({.asd = 20})
 
-/*
-  Pratt-parser but...
-  probably the worst thing written here
-*/
-/*
-  Returns 'true' if it compiled an expression e.g 'a+b',
-  rather than a standalone literal e.g. '2'
-*/
-
-enum {
-    a,
-};
 
 static void
 read_array_dimensions(struct CompleteDataTypeInfo *p_complete_data_type_info) {
@@ -347,6 +335,14 @@ cast()
 
 }
 
+/*
+  Pratt-parser but...
+  probably the worst thing written here
+*/
+/*
+  Returns 'true' if it compiled an expression e.g 'a+b',
+  rather than a standalone literal e.g. '2'
+*/
 // 'p_expr_data_type' is final type of expr after implicit casts e.g. 'int + float' -> expr evaluates to value of type 'float'
 static bool
 gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p_expr_result_data_type){
@@ -365,20 +361,19 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p
         case LIT_NUM:
         case LIT_STR:
         case PAREN_L: {
-			// if any data type kw, assume explicit cast (prob scalar only for now) OR compound literal e.g. '(int)'
+			// if any data type kw, assume explicit cast (unary expr) (prob scalar only for now) OR compound literal e.g. '(int)'
 			if (data_type_from_kw(next_tk()->type != -1) {
-				struct CompleteDataTypeInfo cast_data_type_info;
-				read_complete_data_type(&cast_data_type_info, current_tk());
+				struct CompleteDataTypeInfo complete_data_type_info;
+				read_complete_data_type(&complete_data_type_info, current_tk());
 				switch (cast_data_type_info->type) {
 					// TBD: allow cast 'int' &/or 'char' to 'string'?
 					case STRING: tk_err("Explicit cast to string not allowed");
-					// Assume compound literal decl's
-					case ARRAY: break;
-					case STRUCT: break;
+					case ARRAY: tk_err("Array compound literal unimplemented");
+					case STRUCT: tk_err("Struct compound literal unimplemented");
 					// Cast
 					default: {
-
 						if (peek_tk()->type != PAREN_R) tk_err("Expected enclosing ')' for explicit cast");
+						*p_expr_result_data_type = complete_data_type_info->type;
 					}
 				}
 			}
