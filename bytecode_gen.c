@@ -1,4 +1,5 @@
 /* TODO:
+ * make it so all functions can call next_tk, use peeking
  * Still need to standard 'lex_next' & 'next_tk' & 'current_tk'
  * TBD: simplify 'next_tk' to just a current tk & next / peeked tk, for pushback features
  */
@@ -375,7 +376,7 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p
 					case STRUCT: tk_err("Struct compound literal unimplemented");
 					// Cast
 					default: {
-						if (peek_tk()->type != PAREN_R) tk_err("Expected enclosing ')' for explicit cast");
+						if (next_tk()->type != PAREN_R) tk_err("Expected enclosing ')' for explicit cast");
 						*p_expr_result_data_type = complete_data_type_info->type;
 						gen_expr(CAST_OP_PREC);
 					}
