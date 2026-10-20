@@ -335,6 +335,9 @@ cast()
 
 }
 
+// '(type)' forms a cast operator
+#define CAST_OP_PREC 4
+
 /*
   Pratt-parser but...
   probably the worst thing written here
@@ -374,6 +377,7 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p
 					default: {
 						if (peek_tk()->type != PAREN_R) tk_err("Expected enclosing ')' for explicit cast");
 						*p_expr_result_data_type = complete_data_type_info->type;
+						gen_expr(CAST_OP_PREC);
 					}
 				}
 			}
