@@ -349,7 +349,7 @@ cast()
 */
 // 'p_expr_data_type' is final type of expr after implicit casts e.g. 'int + float' -> expr evaluates to value of type 'float'
 static bool
-gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p_expr_result_data_type){
+gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p_expr_result_data_type) {
     static bool R1_use = false;
 
     // temp
@@ -475,6 +475,7 @@ gen_data(long addr, enum DataType type) {
 // }
 
 // or just pass in 'p_sym' lol
+// TBD
 static void
 gen_assign(struct Tk *p_ident_tk)
 {
@@ -489,8 +490,22 @@ gen_assign(struct Tk *p_ident_tk)
                               p_sym->info.array.dimension_count); */
                     break;
         case STRUCT: // gen_struct(p_sym->addr); break;
-        default: gen_expr_start(next_tk());
+        default: {
+			// scalar
+			enum DataType expr_result_data_type;
+			gen_expr_start(next_tk(), &expr_result_data_type);
+			if (expr_result_data_type != p_sym->info.complete_data_type_info)
+				cast("RAX", expr_result_data_type, cast_to_data_type);	// can error
+			// emit("MOV [RBP+offset], RAX");
+		}
     }
+}
+
+// TBD
+static void
+gen_assign_array()
+{
+
 }
 
 // NO DYNAMIC ARRAYS RN
@@ -532,6 +547,7 @@ gen_decl_scalar_var(struct CompleteDataTypeInfo* p_complete_data_type_info) {
         // gen_null(addr);
         return;
     }
+
     gen_assign(p_ident_tk);
 }
 
