@@ -348,8 +348,9 @@ cast()
   rather than a standalone literal e.g. '2'
 */
 // 'p_expr_data_type' is final type of expr after implicit casts e.g. 'int + float' -> expr evaluates to value of type 'float'
+// TODO: NULL check p_expr_result_data_type maybe
 static bool
-gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p_expr_result_data_type) {
+gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, struct CompleteDataTypeInfo *p_expr_result_data_type) {
     static bool R1_use = false;
 
     // temp
@@ -377,7 +378,7 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, enum DataType *p
 					// Cast
 					default: {
 						if (next_tk()->type != PAREN_R) tk_err("Expected enclosing ')' for explicit cast");
-						*p_expr_result_data_type = complete_data_type_info->type;
+						*p_expr_result_data_type = complete_data_type_info;
 						gen_expr(CAST_OP_PREC);
 					}
 				}
