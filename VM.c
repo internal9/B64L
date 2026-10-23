@@ -78,27 +78,6 @@ static uint8_t *p_bytecode;
 #define FP_TO_I64_MAX ((double) (INT64_MAX - 100000))	// random arbitrary value cuz floating-point conversion errors are scary!!!
 #define FP_TO_I64_MIN ((double) (INT64_MIN + 100000))
 
-// 'FULL, HALF, EIGHT'
-static inline int read_mode_to_int_size(enum OPERAND_READ_MODE read_mode)
-{
-        switch (read_mode) {
-        case FULL: return 8;
-        case HALF: return 4;
-        case EIGHT: return 1;
-        default: return -1;
-        }
-}
-
-// C Standard: floating-point size varies
-static inline int read_mode_to_fp_size(enum OPERAND_READ_MODE read_mode)
-{
-        switch (read_mode) {
-        case FULL: return sizeof(double);
-        case HALF: return MAX(sizeof(double) / 2, 1);
-        case EIGHT: return MAX(sizeof(double) / 8, 1);
-        default: return -1;
-        }
-}
 
 static inline int64_t try_cast_fp_to_i64(double fp_val)
 {
