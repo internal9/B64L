@@ -1,3 +1,4 @@
+// TODO: to be overhauled
 // 'LOAD' instr possibly needed
 // Explicit values just to make stuff easier (yeah i gonna fix this later)
 enum OPCODE
