@@ -4,14 +4,16 @@
 enum OPCODE
 {
 	// memory transfer operations
-	MOVR = 0,	// # bytes used depends on reg used
-	MOVSI = 1,	// move 64-bit integer value into stack address
-	MOVSF = 100,	// move float value into stack address
-	MOVH = 2,	// move value into heap address at stack address?
-	TRS = 3,	// transfer to reg from stack
-	TSR = 4,	// transfer to stack from reg
-	TRH = 5,	// transfer to reg from heap address
-	THR = 6,	// transfer to heap address from reg
+	MOVR = 0,		// # bytes used depends on reg used
+	MOVSI = 1,		// move integer value into stack address (addr: base + index * scale + displacement)
+	MOVSIS = 900, 	// move integer value into stack address simple (addr: specified by one reg / value)
+	MOVSF = 100,	// move float value into stack address (addr: base + index * scale + displacement)
+	MOVSFS = 1234,	// move float value into stack address simple (addr: specified by one reg / value)
+	MOVH = 2,		// move value into heap address at stack address?
+	TRS = 3,		// transfer to reg from stack
+	TSR = 4,		// transfer to stack from reg
+	TRH = 5,		// transfer to reg from heap address
+	THR = 6,		// transfer to heap address from reg
 
 	// arithmetic operations
 	// op [reg]
