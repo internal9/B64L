@@ -35,6 +35,26 @@
 #define MAX(x, y) (((x) >= (y)) ? (x) : (y))
 #define STACK_SIZE 512	// i sure do love arbitrary numbers, will change later
 
+// should just remove lol
+// Specify size to use for operands that can either be regs or literals, to save bytes ig. Orrr just read a reg
+enum OPERAND_READ_MODE
+{
+	USE_REG = 0,
+	
+	/*
+		If instructions operates on reg or stack location:
+			 They expect sizeof(int64_t) or sizeof(double) amount of bits,
+			 *depending* on if a reg or floating-point reg is being used
+	
+		If instruction can use literals:
+			They expect sizeof(int64_t) or sizeof(double) amount of bits
+			*depending* on instruction
+	*/
+	EIGHT = 1,
+	HALF = 2,
+	FULL = 3,
+
+};
 
 enum REG
 {	
@@ -67,6 +87,19 @@ double fp_regs[] = {
 	[FR1] = 0,
 	[FR2] = 0,
 };
+// might remove these 2 lookup tables
+const int I_LITERAL_SIZES[] = {
+	[FULL] = 8,
+	[HALF] = 4,
+	[EIGHT] = 1,
+};
+
+
+const int FP_LITERAL_SIZES[] = {
+	[FULL] = sizeof(double),
+	[HALF] = MAX(sizeof(double) / 2, 1),
+	[EIGHT] = MAX(sizeof(double) / 8, 1)
+};
 
 static uint8_t stack[STACK_SIZE]; // full stack implementation, 'ip' points to most recently pushed byte
 
@@ -78,6 +111,27 @@ static uint8_t *p_bytecode;
 #define FP_TO_I64_MAX ((double) (INT64_MAX - 100000))	// random arbitrary value cuz floating-point conversion errors are scary!!!
 #define FP_TO_I64_MIN ((double) (INT64_MIN + 100000))
 
+// 'FULL, HALF, EIGHT'
+static inline int read_mode_to_int_size(enum OPERAND_READ_MODE read_mode)
+{
+        switch (read_mode) {
+        case FULL: return 8;
+        case HALF: return 4;
+        case EIGHT: return 1;
+        default: return -1;
+        }
+}
+
+// C Standard: floating-point size varies
+static inline int read_mode_to_fp_size(enum OPERAND_READ_MODE read_mode)
+{
+        switch (read_mode) {
+        case FULL: return sizeof(double);
+        case HALF: return MAX(sizeof(double) / 2, 1);
+        case EIGHT: return MAX(sizeof(double) / 8, 1);
+        default: return -1;
+        }
+}
 
 static inline int64_t try_cast_fp_to_i64(double fp_val)
 {
@@ -303,7 +357,7 @@ static void op_movsi(enum OPERAND_READ_MODE operand_2_read_mode)
 {
 	uint8_t stack_addr_info = expect_byte(ip + 1, "movsi: expected info byte for reading stack address");
 	int stack_addr = read_stack_addr(stack_addr_info);
-	
+
 	if (operand_2_read_mode == USE_REG)
 	{
 		enum REG src_reg = expect_reg(ip + 2, "movsf: expected integer src reg for value");
@@ -324,7 +378,7 @@ static void op_movsf(enum OPERAND_READ_MODE operand_2_read_mode)
 {
 	uint8_t stack_addr_info = expect_byte(ip + 1, "movsf: expected info byte for reading stack address");
 	int stack_addr = read_stack_addr(stack_addr_info);
-	
+
 	if (operand_2_read_mode == USE_REG)
 	{
 		enum REG src_reg = expect_reg(ip + 2, "movsf: expected floating-point src reg for value");
@@ -344,7 +398,7 @@ static void op_movsf(enum OPERAND_READ_MODE operand_2_read_mode)
 static void op_push();
 static void op_pop(enum OPERAND_READ_MODE operand_read_mode)
 {
-        
+
 }
 
 // branching operations
@@ -383,7 +437,7 @@ static void op_jmp(enum OPERAND_READ_MODE operand_read_mode)
                 printf("JMP AMOUNT BYTES: %.8x\n", jmp_amount);
 
         }
-        
+
         // implement overflow handling
         if (jmp_amount == 0)
                 ERREXIT("jmp: amount cannot == 0");
@@ -470,7 +524,7 @@ static void init_bytecode(FILE *p_bytecode_file)
 	// assuming bytecode files don't have an EOF indicator (Linux)
 	if (fread(p_bytecode, 1, (size_t) file_size, p_bytecode_file) != (size_t) file_size)	// if only file_size was size_t instead of long..
 		PERREXIT("Failed to read bytecode file");
-	
+
 	// debug
 	printf("Bytecode file size: %lu\n", file_size);
 }
