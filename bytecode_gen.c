@@ -276,7 +276,7 @@ data_type_from_kw(enum TkType kw_type) {
 
 // unnamed aggregate objects allowed (e.g. func((int) {'a', 2, 5}); func({.asd = 20})
 
-
+// TODO: generalize function so it can be used for reading array assigning e.g. "arr[x][y] = val", mayb 'read_array_indexes / subscripts'
 static void
 read_array_dimensions(struct CompleteDataTypeInfo *p_complete_data_type_info) {
 	while (next_tk()->type == BRACKET_L) {
@@ -349,6 +349,7 @@ cast()
 */
 // 'p_expr_data_type' is final type of expr after implicit casts e.g. 'int + float' -> expr evaluates to value of type 'float'
 // TODO: NULL check p_expr_result_data_type maybe
+// TBD: make another version using 255 regs like lua does, prob simpler
 static bool
 gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, struct CompleteDataTypeInfo *p_expr_result_data_type) {
     static bool R1_use = false;
