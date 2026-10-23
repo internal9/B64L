@@ -35,39 +35,6 @@
 #define MAX(x, y) (((x) >= (y)) ? (x) : (y))
 #define STACK_SIZE 512	// i sure do love arbitrary numbers, will change later
 
-// should just remove lol
-// Specify size to use for operands that can either be regs or literals, to save bytes ig. Orrr just read a reg
-enum OPERAND_READ_MODE
-{
-	USE_REG = 0,
-	
-	/*
-		If instructions operates on reg or stack location:
-			 They expect sizeof(int64_t) or sizeof(double) amount of bits,
-			 *depending* on if a reg or floating-point reg is being used
-	
-		If instruction can use literals:
-			They expect sizeof(int64_t) or sizeof(double) amount of bits
-			*depending* on instruction
-	*/
-	EIGHT = 1,
-	HALF = 2,
-	FULL = 3,
-
-};
-
-enum REG
-{	
-	R1 = 0,
-	R2 = 1,
-	RAX = 2,
-	RBP = 3,
-	PRBP = 4,
-	RSP = 5,
-	FR1 = 6,
-	FR2 = 7
-};
-
 // wish i could change enum base type in C99
 #define IS_I_REG(int_val) ((int) (int_val) >= (int) R1 && (int) (int_val) <= (int) PRBP)
 #define IS_FP_REG(int_val) ((int) (int_val) == (int) FR1 || (int) (int_val) == (int) FR2)
