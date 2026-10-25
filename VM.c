@@ -33,7 +33,6 @@
 */
 #define PERREXIT(...) (fprintf(stderr, __VA_ARGS__), fputs(": ", stderr), perror(NULL), exit(errno))
 #define MAX(x, y) (((x) >= (y)) ? (x) : (y))
-#define STACK_SIZE 512	// i sure do love arbitrary numbers, will change later
 
 // wish i could change enum base type in C99
 #define IS_I_REG(int_val) ((int) (int_val) >= (int) R1 && (int) (int_val) <= (int) PRBP)
