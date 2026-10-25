@@ -186,12 +186,20 @@ emit_opcode() {
 
 }
 
+static FILE *bytecode_out_file;	// not 'NULL' with flags '-c' or '-ro'
+
+static bool
+emit(uint8_t byte) {
+	
+}
+
+static void
+emit_n(uint8_t *bytes) {
+
+}
 
 #define INSTR_ARG_REG(opcode) (uint8_t) (0x80 | opcode) // if two args, arg2 is reg, if one arg, arg is reg
 #define INSTR_ARG_LIT(opcode) (uint8_t) (0x00 | opcode)
-
-// Temp
-#define emit(a)
 
 static struct Symbol *
 sym_push(enum SymType type, struct Tk *p_ident_tk) {
@@ -640,6 +648,44 @@ gen_block(void) {
     }
 }
 
+/*
+	!!!
+	ISO C99: no good way to make file only if it doesn't exist:
+	- fopen(file, "-r"): 
+		- file no exist? possible race conditions if file is created by smthn else
+		- fails if no exist OR *no reading perm*, opening in latter case can't do write / read
+	- would have to use POSIX / windows.h but too lazy
+*/
+static void
+open_bytecode_file(const char *file_name)
+{
+        FILE *bytecode_file;
+		// !!! 'w' flag either cretes new file OR truncates file length to zero (so it will be overwritten during compilation_
+        if ((src_file = fopen(file_name, "w")) == NULL)
+                PERREXIT("Failed to open bytecode out file");
+
+		// what was this for???
+        // fseek & ftell for portability to windows too ig???
+        if (fseek(src_file, 0, SEEK_END) != 0)
+                goto read_err;
+        if ((src_len = ftell(src_file)) == -1L)
+                goto read_err;
+        if (fseek(src_file, 0, SEEK_SET) != 0)  // heard setting it to start is safe, i'm paranoid tho
+                goto read_err;
+        goto read_success;
+
+read_err:
+        free(src_txt);
+        perror("Failed to read source file");
+        if (fclose(src_file) != 0)
+                PERREXIT("Failed to close bytecode out file");
+        
+read_success:
+        // debug
+        printf("Bytecode out file size: %ld\n", src_len);
+        // debug end
+} 
+
 
 uint8_t *
 bytecode_gen_nofile(void) {
@@ -658,5 +704,14 @@ bytecode_gen_nofile(void) {
 
 FILE *
 bytecode_gen_file(void) {
+
+	/*
+
+        if (fclose(bytecode_file) != 0) {
+                free(bytecode_file);
+                PERREXIT("Failed to close bytecode out file");
+        }
+        src_txt[src_len] = '\0';
+	*/
     return NULL;
 }
