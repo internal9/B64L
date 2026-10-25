@@ -28,27 +28,30 @@ int main(int argc, const char *argv[])
                         " one source file to compile to bytecode,"
                         " or one bytecode file to execute.");
 
-        const char *file_name = argv[argc - 1];
-        // assume 'option -n'
+       // src file name with flags '-c', '-r', & '-rp', otherwise bytecode file name with flag '-rb'
+        const char *file_name = argv[2];
+        // assume flag '-r'
         if (argc == 2) {
-                lex_init(file_name);
-                bytecode_gen_nofile();
+                goto default_flag;
         }
         else if (argc == 3) {
                 const char *flag = argv[1];
                 if (strcmp(flag, COMPILE_SRC_ONLY)) {
+                        const char *bytecode_file_name = argv[3];
                         lex_init(file_name);
+                        bytecode_gen
                         // bytes = bytecode_gen_file();
                 }
                 else if (strcmp(flag, RUN_SRC_NO_BYTECODE_FILE)) {
+                default_flag:
                         lex_init(file_name);
-                        // vm_run(bytecode_gen_nofile());
+                        vm_run(bytecode_gen_nofile(file_name));
                 }
                 else if (strcmp(flag, RUN_SRC_OUTPUT_BYTECODE_FILE) {
-
+                        // const char *bytecode_file_name = argv[3];
                 }
                 else if (strcmp(flag, RUN_BYTECODE_FILE) {
-
+        
                 }
                 else
                         ERREXIT("Invalid flag '%s'\n", flag);
