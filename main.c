@@ -1,3 +1,4 @@
+// TBD: open & handle all files here and just pass 'FILE *'s to VM, lex, & bytecode_gen 
 /*
   NOTES:
   - '-c' Only compile src and output bytecode file, no execution
