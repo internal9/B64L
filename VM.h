@@ -1,6 +1,8 @@
 // TODO: to be overhauled
 // 'LOAD' instr possibly needed
 // Explicit values just to make stuff easier (yeah i gonna fix this later)
+#include <stdint.h>
+
 enum OPCODE
 {
 	// memory transfer operations
@@ -120,3 +122,7 @@ enum REG
 	REG_FR1 = 6,
 	REG_FR2 = 7
 };
+
+// NOTE: this unused by 'bytecode_gen.c' which #includes this file
+void vm_run_file(FILE *bytecode_file);
+void vm_run_buffer(const uint8_t *bytecode);
