@@ -1,4 +1,5 @@
 /* TODO:
+ * clean fclose handling of 'bytecode_out_file' if emit fails
  * make it so all functions can call next_tk, use peeking
  * Still need to standard 'lex_next' & 'next_tk' & 'current_tk'
  * TBD: simplify 'next_tk' to just a current tk & next / peeked tk, for pushback features
@@ -7,6 +8,7 @@
 // INT ARRAY name[size1][size2]
 // lex literals (e.g. LIT_BOOL)
 // init lexing here instead of in main.c?
+#include "util.h"
 #include "lex.h"
 #include "VM.h"
 #include "hashmap.h"
@@ -186,16 +188,23 @@ emit_opcode() {
 
 }
 
-static FILE *bytecode_out_file;	// not 'NULL' with flags '-c' or '-ro'
+static FILE *bytecode_out_file = NULL;		// not 'NULL' with flags '-c' or '-ro
+static uint8_t *bytecode_buffer = NULL;	// not 'NULL' with flag '-r'
 
 static bool
 emit(uint8_t byte) {
-	
+	if (bytecode_out_file == NULL) {
+		if (putc(byte, bytecode_out_file) == EOF)
+			PERREXIT("Failed to write byte to bytecode out file");
+	}
+	else {
+
+	}
 }
 
 static void
-emit_n(uint8_t *bytes) {
-
+emit_n(int n, uint8_t bytes[n]) {
+	
 }
 
 #define INSTR_ARG_REG(opcode) (uint8_t) (0x80 | opcode) // if two args, arg2 is reg, if one arg, arg is reg
@@ -659,35 +668,7 @@ gen_block(void) {
 	!!!
 	'w' flag will overwrite preexisting files
 */
-static void
-make_bytecode_out_file(const char *file_name)
-{
-        FILE *bytecode_out_file;
-		// !!! 'w' flag either cretes new file OR truncates file length to zero (so it will be overwritten during compilation_
-        if ((src_file = fopen(file_name, "w")) == NULL)
-                PERREXIT("Failed to open bytecode out file");
 
-		// what was this for???
-        // fseek & ftell for portability to windows too ig???
-        if (fseek(src_file, 0, SEEK_END) != 0)
-                goto read_err;
-        if ((src_len = ftell(src_file)) == -1L)
-                goto read_err;
-        if (fseek(src_file, 0, SEEK_SET) != 0)  // heard setting it to start is safe, i'm paranoid tho
-                goto read_err;
-        goto read_success;
-
-read_err:
-        free(src_txt);
-        perror("Failed to read source file");
-        if (fclose(src_file) != 0)
-                PERREXIT("Failed to close bytecode out file");
-        
-read_success:
-        // debug
-        printf("Bytecode out file size: %ld\n", src_len);
-        // debug end
-} 
 
 
 uint8_t *
@@ -707,8 +688,7 @@ bytecode_gen_nofile(void) {
 
 FILE *
 bytecode_gen_file(const char *out_file_name) {
-	// TBD: centralize error handling here instead of it being contained in below func, and make it return instead of setting itself?
-	make_bytecode_out_file(out_file_name);
+	if ((bytecode_out_file = fopen(out_file_name, "wb")) == NULL) PERREXIT("Failed to make / open bytecode out file");
 	/*
 
         if (fclose(bytecode_out_file) != 0) {
@@ -717,5 +697,6 @@ bytecode_gen_file(const char *out_file_name) {
         }
         src_txt[src_len] = '\0';
 	*/
+	if (fclose(bytecode_out_file) != 0) PERREXIT("Failed to close bytecode out file");
     return bytecode_out_file;
 }
