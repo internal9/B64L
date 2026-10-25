@@ -496,6 +496,7 @@ static void init_bytecode(FILE *p_bytecode_file)
 	printf("Bytecode file size: %lu\n", file_size);
 }
 
+// TODO: remove 'main' & make VM.c part of executable
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
