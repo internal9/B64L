@@ -12,8 +12,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define OUTPUT_BYTECODE_FILE "-c"
-#define RUN_NO_BYTECODE_FILE "-n"
+#define COMPILE_SRC_ONLY             "-c"  // compile src & output bytecode file only
+#define RUN_SRC_NO_BYTECODE_FILE     "-r"  // run src but bytecode compiled in temp buffer instead of file
+#define RUN_SRC_OUTPUT_BYTECODE_FILE "-ro" // run src & output bytecode file
+#define RUN_BYTECODE_FILE            "-rb"  // run input assuming it's compiled bytecode (NOTE: maybe handle endianness?)
 
 // barebones for testing purposes
 int main(int argc, const char *argv[])
@@ -34,13 +36,19 @@ int main(int argc, const char *argv[])
         }
         else if (argc == 3) {
                 const char *flag = argv[1];
-                if (strcmp(flag, OUTPUT_BYTECODE_FILE)) {
+                if (strcmp(flag, COMPILE_SRC_ONLY)) {
                         lex_init(file_name);
                         // bytes = bytecode_gen_file();
                 }
-                else if (strcmp(flag, RUN_NO_BYTECODE_FILE)) {
+                else if (strcmp(flag, RUN_SRC_NO_BYTECODE_FILE)) {
                         lex_init(file_name);
                         // vm_run(bytecode_gen_nofile());
+                }
+                else if (strcmp(flag, RUN_SRC_OUTPUT_BYTECODE_FILE) {
+
+                }
+                else if (strcmp(flag, RUN_BYTECODE_FILE) {
+
                 }
                 else
                         ERREXIT("Invalid flag '%s'\n", flag);
