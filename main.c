@@ -14,8 +14,8 @@
 
 #define COMPILE_SRC_ONLY             "-c"  // compile src & output bytecode file only
 #define RUN_SRC_NO_BYTECODE_FILE     "-r"  // run src but bytecode compiled in temp buffer instead of file
-#define RUN_SRC_OUTPUT_BYTECODE_FILE "-ro" // run src & output bytecode file
-#define RUN_BYTECODE_FILE            "-rb"  // run input assuming it's compiled bytecode (NOTE: maybe handle endianness?)
+#define RUN_SRC_OUTPUT_BYTECODE_FILE "-ro" // run src & output bytecode file w/ specified name
+#define RUN_BYTECODE_FILE            "-rb" // run bytecode file (NOTE: maybe handle endianness?)
 
 // barebones for testing purposes
 int main(int argc, const char *argv[])
