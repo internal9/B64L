@@ -655,11 +655,14 @@ gen_block(void) {
 		- file no exist? possible race conditions if file is created by smthn else
 		- fails if no exist OR *no reading perm*, opening in latter case can't do write / read
 	- would have to use POSIX / windows.h but too lazy
+
+	!!!
+	'w' flag will overwrite preexisting files
 */
 static void
-open_bytecode_file(const char *file_name)
+make_bytecode_out_file(const char *file_name)
 {
-        FILE *bytecode_file;
+        FILE *bytecode_out_file;
 		// !!! 'w' flag either cretes new file OR truncates file length to zero (so it will be overwritten during compilation_
         if ((src_file = fopen(file_name, "w")) == NULL)
                 PERREXIT("Failed to open bytecode out file");
@@ -696,22 +699,23 @@ bytecode_gen_nofile(void) {
     // expr(next_tk(), 0, true);
     // printf("%d\n", tk.type);
 
-   gen_block();
+	gen_block();
 
     // TBD: clear scope per iteration
     return NULL;
 }
 
 FILE *
-bytecode_gen_file(void) {
-
+bytecode_gen_file(const char *out_file_name) {
+	// TBD: centralize error handling here instead of it being contained in below func, and make it return instead of setting itself?
+	make_bytecode_out_file(out_file_name);
 	/*
 
-        if (fclose(bytecode_file) != 0) {
-                free(bytecode_file);
+        if (fclose(bytecode_out_file) != 0) {
+                free(bytecode_out_file);
                 PERREXIT("Failed to close bytecode out file");
         }
         src_txt[src_len] = '\0';
 	*/
-    return NULL;
+    return bytecode_out_file;
 }
