@@ -3,19 +3,21 @@
 // Explicit values just to make stuff easier (yeah i gonna fix this later)
 #include <stdint.h>
 
+#define VM_STACK_SIZE 512	// i sure do love arbitrary numbers, will change later
+
 enum OPCODE
 {
 	// memory transfer operations
-	OP_MOVR = 0,		// # bytes used depends on reg used
-	OP_MOVSI = 1,		// move integer value into stack address (addr: base + index * scale + displacement)
-	OP_MOVSIS = 900, 	// move integer value into stack address simple (addr: specified by one reg / value)
-	OP_MOVSF = 100,	// move float value into stack address (addr: base + index * scale + displacement)
-	OP_MOVSFS = 1234,	// move float value into stack address simple (addr: specified by one reg / value)
-	OP_MOVH = 2,		// move value into heap address at stack address?
-	OP_TRS = 3,		// transfer to reg from stack
-	OP_TSR = 4,		// transfer to stack from reg
-	OP_TRH = 5,		// transfer to reg from heap address
-	OP_THR = 6,		// transfer to heap address from reg
+	OP_MOVR 	= 0,		// # bytes used depends on reg used
+	OP_MOVSI	= 1,		// move integer value into stack address (addr: base + index * scale + displacement)
+	OP_MOVSIS 	= 900, 	// move integer value into stack address simple (addr: specified by one reg / value)
+	OP_MOVSF 	= 100,		// move float value into stack address (addr: base + index * scale + displacement)
+	OP_MOVSFS 	= 1234,	// move float value into stack address simple (addr: specified by one reg / value)
+	OP_MOVH		= 2,		// move value into heap address at stack address?
+	OP_TRS 		= 3,			// transfer to reg from stack
+	OP_TSR	 	= 4,			// transfer to stack from reg
+	OP_TRH		= 5,			// transfer to reg from heap address
+	OP_THR		= 6,			// transfer to heap address from reg
 
 	// arithmetic operations
 	// op [reg]
