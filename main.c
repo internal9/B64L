@@ -1,10 +1,13 @@
-// TBD: open & handle all files here and just pass 'FILE *'s to VM, lex, & bytecode_gen
-/*
-  NOTES:
-  - '-c' Only compile src and output bytecode file, no execution
-  - '-n' Compile & run src, but *no* bytecode file output
-  - have a seperate VM binary or just arg option to either run or just bytecode compile?
-*/
+/* TBD:
+ * - open & handle all files here and just pass 'FILE *'s to VM, lex, & bytecode_gen
+ * - only main close file pointers, lex, bytecode_gen just error msg and return
+ */
+
+/* NOTES:
+ * - '-c' Only compile src and output bytecode file, no execution
+ * - '-n' Compile & run src, but *no* bytecode file output
+ * - have a seperate VM binary or just arg option to either run or just bytecode compile?
+ */
 #include "lex.h"
 #include "bytecode_gen.h"
 // #include "VM.h"
