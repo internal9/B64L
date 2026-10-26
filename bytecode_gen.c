@@ -173,11 +173,8 @@ static bool compile_error = false;
                                            (compile_error = true))
 
 // passing pointer prob a lil unnecessary
-#define tk_err(p_tk, MSG) 				   (fprintf(stderr, "(L%ld C%ld) " MSG "\n", (p_tk)->line, (p_tk)->column), \
-                            			   (compile_error = true))
-#define tk_err_fmt(p_tk, FMT, ...) 		   (fprintf(stderr, "(L%ld C%ld) " MSG "\n", \
-                                           (p_tk)->line, (p_tk)->column, __VA_ARGS__), \
-                                           (compile_error = true))
+#define tk_err(p_tk, msg) 				   err_at(p_tk->line, p_tk->column, msg);
+#define tk_err_fmt(p_tk, fmt, ...) 		   err_fmt_at(p_tk->line, p_tk->column, fmt, __VA_ARGS__);
 
 
 static FILE *bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
