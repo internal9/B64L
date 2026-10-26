@@ -33,7 +33,6 @@
 */
 #define PERREXIT(...) (fprintf(stderr, __VA_ARGS__), fputs(": ", stderr), perror(NULL), exit(errno))
 #define MAX(x, y) (((x) >= (y)) ? (x) : (y))
-#define STACK_SIZE 512	// i sure do love arbitrary numbers, will change later
 
 // should just remove lol
 // Specify size to use for operands that can either be regs or literals, to save bytes ig. Orrr just read a reg
