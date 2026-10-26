@@ -6,7 +6,7 @@
  */
 
 // INT ARRAY name[size1][size2]
-// lex literals (e.g. LIT_BOOL)
+// lex literals (e.g. TK_LIT_BOOL)
 // init lexing here instead of in main.c?
 #include "util.h"
 #include "lex.h"
@@ -44,7 +44,7 @@ static long ip;
 enum DataType {
     BOOL,
     CHAR,
-    INT,	// remember 'LIT_INT' exists too
+    INT,	// remember 'TK_LIT_INT' exists too
     NUM,
     STRING,
     ARRAY,
@@ -92,7 +92,7 @@ struct Symbol {
 		struct {
 		} label;
 	} info;
-	const char *ident;
+	const char *TK_IDENT;
     enum SymType type;
     long line, column;
     long addr;
@@ -119,7 +119,7 @@ struct ForwardFnCalls {
 static struct HashMap forward_fn_call_table;
 
 static void gen_decl_var(struct CompleteDataTypeInfo *p_complete_data_type_info);
-static bool gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start);
+// static bool gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start);
 static void gen_struct();
 static void gen_block(void);
 static void gen_if();
@@ -204,38 +204,38 @@ emit(uint8_t byte) {
 
 static void
 emit_n(int n, uint8_t bytes[n]) {
-	
+
 }
 
 #define INSTR_ARG_REG(opcode) (uint8_t) (0x80 | opcode) // if two args, arg2 is reg, if one arg, arg is reg
 #define INSTR_ARG_LIT(opcode) (uint8_t) (0x00 | opcode)
 
 static struct Symbol *
-sym_push(enum SymType type, struct Tk *p_ident_tk) {
+sym_push(enum SymType type, struct Tk *p_TK_IDENT_tk) {
     /* pls arena alloc... or just stack allocate */
     struct Symbol *p_sym = malloc(sizeof(struct Symbol));
-    p_sym->ident = p_ident_tk->value.txt; // valid as long as tk remains in tk buffer
+    p_sym->TK_IDENT = p_TK_IDENT_tk->value.txt; // valid as long as tk remains in tk buffer
     p_sym->type = type;
-    p_sym->line = p_ident_tk->line;
-    p_sym->column = p_ident_tk->column;
+    p_sym->line = p_TK_IDENT_tk->line;
+    p_sym->column = p_TK_IDENT_tk->column;
     p_sym->scope_level = scope_level;
     p_sym->addr = addr++;
     hashmap_put_ptr(&symbol_table,
-                    p_ident_tk->value.txt,
-                    strlen(p_ident_tk->value.txt),
+                    p_TK_IDENT_tk->value.txt,
+                    strlen(p_TK_IDENT_tk->value.txt),
                     (void *) p_sym);
     return p_sym;
 }
 
 static struct Symbol *
-sym_get(struct Tk *p_ident_tk) {
+sym_get(struct Tk *p_TK_IDENT_tk) {
     return hashmap_get_ptr(&symbol_table,
-                           p_ident_tk->value.txt,
-                           strlen(p_ident_tk->value.txt));
+                           p_TK_IDENT_tk->value.txt,
+                           strlen(p_TK_IDENT_tk->value.txt));
 }
 
 static bool
-sym_pop(int count) // struct Tk* p_ident_tk) ?
+sym_pop(int count) // struct Tk* p_TK_IDENT_tk) ?
 {
     // handle dynamically allocated stuff
     for (int i = 0; i < count; i++) {
@@ -276,15 +276,15 @@ static void instr_debug(enum TkType type) {
 
 
 static int
-data_type_from_kw(enum TkType kw_type) {
-    switch (kw_type) {
-        case KW_BOOL: return BOOL;
-        case KW_CHAR: return CHAR;
-        case KW_INT: return INT;
-        case KW_NUM: return NUM;
-        case KW_STRING: return STRING;
-        case KW_ARRAY: return ARRAY;
-        case KW_STRUCT: return STRUCT;
+data_type_from_kw(enum TkType TK_KW_type) {
+    switch (TK_KW_type) {
+        case TK_KW_BOOL: return BOOL;
+        case TK_KW_CHAR: return CHAR;
+        case TK_KW_INT: return INT;
+        case TK_KW_NUM: return NUM;
+        case TK_KW_STRING: return STRING;
+        case TK_KW_ARRAY: return ARRAY;
+        case TK_KW_STRUCT: return STRUCT;
         default: return -1;
     }
 }
@@ -296,9 +296,9 @@ data_type_from_kw(enum TkType kw_type) {
 // TODO: generalize function so it can be used for reading array assigning e.g. "arr[x][y] = val", mayb 'read_array_indexes / subscripts'
 static void
 read_array_dimensions(struct CompleteDataTypeInfo *p_complete_data_type_info) {
-	while (next_tk()->type == BRACKET_L) {
+	while (next_tk()->type == TK_BRACKET_L) {
         struct Tk *p_dimension_size;
-        if ((p_dimension_size = next_tk())->type != LIT_INT) {
+        if ((p_dimension_size = next_tk())->type != TK_LIT_INT) {
             tk_err(p_dimension_size, "Array dimension size expected 'int'");
         }
 
@@ -307,7 +307,7 @@ read_array_dimensions(struct CompleteDataTypeInfo *p_complete_data_type_info) {
         p_complete_data_type_info->meta_info.ty_array.dimension_sizes[
                 p_complete_data_type_info->meta_info.ty_array.dimension_count
             ] = (int) tk.value.int_v;
-        if (next_tk()->type != BRACKET_R) {
+        if (next_tk()->type != TK_BRACKET_R) {
             tk_err(current_tk(), "Expected right square bracket ']'");
         }
         if (++p_complete_data_type_info->meta_info.ty_array.dimension_count > MAX_ARRAY_DIMENSION_COUNT) {
@@ -320,10 +320,10 @@ read_array_dimensions(struct CompleteDataTypeInfo *p_complete_data_type_info) {
 // TODO: handle things like "int fn foo()"
 // e.g. compound literals: func(  (struct P) {1, 2, 5, 8}, (bool array[2]) {this, that}  );
 static void
-read_complete_data_type(struct CompleteDataTypeInfo *p_complete_data_type_info, struct Tk *p_type_kw_tk) {
-    enum DataType data_type = data_type_from_kw(p_type_kw_tk->type);
+read_complete_data_type(struct CompleteDataTypeInfo *p_complete_data_type_info, struct Tk *p_type_TK_KW_tk) {
+    enum DataType data_type = data_type_from_kw(p_type_TK_KW_tk->type);
     if (data_type == ARRAY)
-        tk_err(p_type_kw_tk, "Aggregate data types can only be specified after scalar");
+        tk_err(p_type_TK_KW_tk, "Aggregate data types can only be specified after scalar");
 
 	if (data_type == STRUCT) {
 		p_complete_data_type_info->type = STRUCT;
@@ -372,41 +372,42 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, struct CompleteD
     static bool R1_use = false;
 
     // temp
-    if (p_left->type == END) // TODO: handle unexpected tks too
+    if (p_left->type == TK_END) // TODO: handle unexpected tks too
         puts("Expected expression"), exit(1);
 
     bool is_left_expr = false;
     switch (p_left->type) {
-        case LIT_TRUE: // emit(0b10000000 | MOV); emit(1); //emit("MOV R1, 1")
-        case LIT_FALSE:
-        case LIT_CHAR:
-        case LIT_INT: break;
-        case LIT_NUM:
-        case LIT_STR:
-        case PAREN_L: {
+        case TK_LIT_TRUE: // emit(0b10000000 | MOV); emit(1); //emit("MOV R1, 1")
+        case TK_LIT_FALSE:
+        case TK_LIT_CHAR:
+        case TK_LIT_INT: break;
+        case TK_LIT_NUM:
+        case TK_LIT_STR:
+        case TK_PAREN_L: {
 			// if any data type kw, assume explicit cast (unary expr) (prob scalar only for now) OR compound literal e.g. '(int)'
-			if (data_type_from_kw(next_tk()->type != -1) {
+			if (data_type_from_kw(next_tk()->type != -1)) {
 				struct CompleteDataTypeInfo complete_data_type_info;
 				read_complete_data_type(&complete_data_type_info, current_tk());
-				switch (cast_data_type_info->type) {
+				switch (complete_data_type_info.type) {
 					// TBD: allow cast 'int' &/or 'char' to 'string'?
-					case STRING: tk_err("Explicit cast to string not allowed");
-					case ARRAY: tk_err("Array compound literal unimplemented");
-					case STRUCT: tk_err("Struct compound literal unimplemented");
+					case STRING: tk_err(current_tk(), "Explicit cast to string not allowed");
+					case ARRAY: tk_err(current_tk(), "Array compound literal unimplemented");
+					case STRUCT: tk_err(current_tk(), "Struct compound literal unimplemented");
 					// Cast
 					default: {
-						if (next_tk()->type != PAREN_R) tk_err("Expected enclosing ')' for explicit cast");
+						if (next_tk()->type != TK_PAREN_R) tk_err(current_tk(), "Expected enclosing ')' for explicit cast");
 						*p_expr_result_data_type = complete_data_type_info;
-						gen_expr(CAST_OP_PREC);
+						// gen_expr(CAST_OP_PREC);
 					}
 				}
 			}
 			else {
-	            is_left_expr = gen_expr(next_tk(), 0, false);
+			    struct CompleteDataTypeInfo left_expr_result_data_type;
+	            is_left_expr = gen_expr(next_tk(), 0, false, &left_expr_result_data_type);
 	            if (!is_left_expr)
 	                p_left = current_tk(); // i hate it, since only literal retrieve that
 	            struct Tk *p_tk = next_tk();
-	            if (p_tk->type != PAREN_R)
+	            if (p_tk->type != TK_PAREN_R)
 	                tk_err(p_tk, "Expected ')'");
 			}
             break;
@@ -431,7 +432,8 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, struct CompleteD
 
     do {
         next_tk(); // read past operator tk
-        bool is_right_sub_expr = gen_expr(next_tk(), prec, false);
+        struct CompleteDataTypeInfo right_expr_result_data_type;
+        bool is_right_sub_expr = gen_expr(next_tk(), prec, false, &right_expr_result_data_type);
         if (is_right_sub_expr) {
             R1_use = false;
             puts("MOV R2, R1");
@@ -496,25 +498,26 @@ gen_data(long addr, enum DataType type) {
 // or just pass in 'p_sym' lol
 // TBD
 static void
-gen_assign(struct Tk *p_ident_tk)
+gen_assign(struct Tk *p_TK_IDENT_tk)
 {
-    struct Symbol *p_sym = sym_get(p_ident_tk);
+    struct Symbol *p_sym = sym_get(p_TK_IDENT_tk);
 	if (p_sym == NULL)
-		tk_err(p_ident_tk, "Identifier sym doesn't exist");
+		tk_err(p_TK_IDENT_tk, "TK_IDENTifier sym doesn't exist");
 
     switch (p_sym->type) {
-		case LABEL: tk_err(p_ident_tk, "Cannot assign to label");
-		case FUNC: tk_err(p_ident_tk, "Cannot assign to function");
+		case LABEL: tk_err(p_TK_IDENT_tk, "Cannot assign to label");
+		case FUNC: tk_err(p_TK_IDENT_tk, "Cannot assign to function");
         case ARRAY: /* gen_array(p_sym->addr, p_sym->info.array.base_type,
                               p_sym->info.array.dimension_count); */
                     break;
         case STRUCT: // gen_struct(p_sym->addr); break;
         default: {
 			// scalar
-			enum DataType expr_result_data_type;
+			struct CompleteDataTypeInfo expr_result_data_type;
 			gen_expr_start(next_tk(), &expr_result_data_type);
-			if (expr_result_data_type != p_sym->info.complete_data_type_info)
-				cast("RAX", expr_result_data_type, cast_to_data_type);	// can error
+            // TODO: func that handles array compare, etc
+			//if (expr_result_data_type != p_sym->info.complete_data_type_info)
+				//cast("RAX", expr_result_data_type, cast_to_data_type);	// can error
 			// emit("MOV [RBP+offset], RAX");
 		}
     }
@@ -531,20 +534,20 @@ gen_assign_array()
 // syntax: 'type' ARRAY['size0']['size1']['size..'] 'name'
 static void
 gen_decl_array(struct CompleteDataTypeInfo* p_complete_data_type_info) {
-    struct Tk *p_tk_ident = current_tk();
-    if (p_tk_ident->type != IDENT) {
-        tk_err(p_tk_ident, "Array: Expected identifier");
+    struct Tk *p_tk_TK_IDENT = current_tk();
+    if (p_tk_TK_IDENT->type != TK_IDENT) {
+        tk_err(p_tk_TK_IDENT, "Array: Expected TK_IDENTifier");
     }
 
-    struct Symbol *p_sym = sym_push(VAR, p_tk_ident);
+    struct Symbol *p_sym = sym_push(VAR, p_tk_TK_IDENT);
     p_sym->info.complete_data_type_info = *p_complete_data_type_info;
 
-    if (next_tk()->type != OP_AS) {
+    if (next_tk()->type != TK_OP_AS) {
         // allocate garbage OR set to 0
         return;
     }
 
-	gen_assign(p_tk_ident);
+	gen_assign(p_tk_TK_IDENT);
     // remove?
     next_tk();// remove?
 }
@@ -553,21 +556,21 @@ gen_decl_array(struct CompleteDataTypeInfo* p_complete_data_type_info) {
 // handle scope
 static void
 gen_decl_scalar_var(struct CompleteDataTypeInfo* p_complete_data_type_info) {
-    struct Tk *p_ident_tk = next_tk();
-    if (p_ident_tk->type != IDENT)
-        tk_err(p_ident_tk, "Expected identifier");
+    struct Tk *p_TK_IDENT_tk = next_tk();
+    if (p_TK_IDENT_tk->type != TK_IDENT)
+        tk_err(p_TK_IDENT_tk, "Expected TK_IDENTifier");
 
-    struct Symbol *p_sym = sym_push(VAR, p_ident_tk);
+    struct Symbol *p_sym = sym_push(VAR, p_TK_IDENT_tk);
     p_sym->info.complete_data_type_info = *p_complete_data_type_info;
 
-    if (next_tk()->type != OP_AS) {
+    if (next_tk()->type != TK_OP_AS) {
         // value is garbage
         // OR
         // gen_null(addr);
         return;
     }
 
-    gen_assign(p_ident_tk);
+    gen_assign(p_TK_IDENT_tk);
 }
 
 static inline void
@@ -588,7 +591,7 @@ static void
 gen_decl_fn(struct CompleteDataTypeInfo *p_return_data_type_info) // enum DataType ret_type)
 {
     in_func = true;
-    // struct Tk *p_ident_tk;
+    // struct Tk *p_TK_IDENT_tk;
 
 
     enum DataType ret_type = data_type_from_kw(lex_next(&tk));
@@ -596,7 +599,7 @@ gen_decl_fn(struct CompleteDataTypeInfo *p_return_data_type_info) // enum DataTy
         tk_err(&tk, "Aggregate return type not allowed");
 
 
-    if (lex_next(&tk) != IDENT) /* error */ ;
+    if (lex_next(&tk) != TK_IDENT) /* error */ ;
     struct Symbol *p_sym = sym_push(FUNC, &tk);
     p_sym->info.func.return_data_type_info = *p_return_data_type_info;
     // use array instead of hashmap? hashmap_init(sym->info.func.params, /*random number*/ 4);
@@ -625,29 +628,29 @@ gen_block(void) {
     struct Tk *p_tk = next_tk();
     for (;;) {
         switch (p_tk->type) {
-            case IDENT:
-                // gen_from_ident();
+            case TK_IDENT:
+                // gen_from_TK_IDENT();
                 break;
-            case KW_BOOL:
-            case KW_CHAR:
-            case KW_INT:
-            case KW_NUM:
-            case KW_STRING:
+            case TK_KW_BOOL:
+            case TK_KW_CHAR:
+            case TK_KW_INT:
+            case TK_KW_NUM:
+            case TK_KW_STRING:
             {
                 struct CompleteDataTypeInfo complete_data_type_info;
 				read_complete_data_type(&complete_data_type_info, p_tk);
 				gen_decl_var(&complete_data_type_info);
                 break;
             }
-            case KW_IF: // gen_if();
-            // KW_ELIF: *handled in if*
-            // KW_ELSE: *handled in if*
-            case KW_WHILE: // gen_while();
-            case KW_FOR: // gen_for();
-            case KW_SWITCH: // gen_switch();
-            case KW_JMP: // gen_jmp(); // not the instr
-            case KW_FN: // gen_decl_fn();
-                // case KW_LABEL: gen_decl_label();
+            case TK_KW_IF: // gen_if();
+            // TK_KW_ELIF: *handled in if*
+            // TK_KW_ELSE: *handled in if*
+            case TK_KW_WHILE: // gen_while();
+            case TK_KW_FOR: // gen_for();
+            case TK_KW_SWITCH: // gen_switch();
+            case TK_KW_JMP: // gen_jmp(); // not the instr
+            case TK_KW_FN: // gen_decl_fn();
+                // case TK_KW_LABEL: gen_decl_label();
             default:
                 return;
         }
@@ -660,7 +663,7 @@ gen_block(void) {
 /*
 	!!!
 	ISO C99: no good way to make file only if it doesn't exist:
-	- fopen(file, "-r"): 
+	- fopen(file, "-r"):
 		- file no exist? possible race conditions if file is created by smthn else
 		- fails if no exist OR *no reading perm*, opening in latter case can't do write / read
 	- would have to use POSIX / windows.h but too lazy
