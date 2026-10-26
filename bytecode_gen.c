@@ -318,6 +318,9 @@ data_type_from_kw(enum TkType TK_KW_type) {
 // unnamed aggregate objects allowed (e.g. func((int) {'a', 2, 5}); func({.asd = 20})
 
 // TODO: generalize function so it can be used for reading array assigning e.g. "arr[x][y] = val", mayb 'read_array_indexes / subscripts'
+// TODO: omitted dimension sizes -> determined via member size at declaration & initialization e.g. int array[] x = {2, 4}, (int array[][]) {{5}}
+#define OMITTED_DIMENSION_SIZE -1
+
 static void
 read_array_dimensions(struct CompleteDataTypeInfo *p_complete_data_type_info) {
 	while (next_tk()->type == TK_BRACKET_L) {
@@ -434,8 +437,8 @@ gen_expr(struct Tk *p_left, int prec_limit, bool is_expr_start, struct CompleteD
 	            if (p_tk->type != TK_PAREN_R)
 	                tk_err(p_tk, "Expected ')'");
 			}
-            break;
 		}
+        break;
         // andd the rest for later
         default:
             // handle non-expr tk
