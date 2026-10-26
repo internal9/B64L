@@ -108,7 +108,7 @@ static inline int esc_seq_from_char(char c)
 static void lex_bin_int(struct Tk *p_tk)
 {
         p_tk->type_group = G_LITERAL;
-        p_tk->type = LIT_INT;
+        p_tk->type = TK_LIT_INT;
         p_tk->value.int_v = 0;
         char c = GET_C();
         // never write this again please
@@ -145,7 +145,7 @@ static void lex_bin_int(struct Tk *p_tk)
 static void lex_hex_int(struct Tk *p_tk)
 {
         p_tk->type_group = G_LITERAL;
-        p_tk->type = LIT_INT;
+        p_tk->type = TK_LIT_INT;
         p_tk->value.int_v = 0;
         char c;
         for (int i = 0; i < 8; i++) {
@@ -176,7 +176,7 @@ static void lex_hex_int(struct Tk *p_tk)
 static void lex_num(struct Tk *p_tk)
 {
         p_tk->type_group = G_LITERAL;
-        p_tk->type = LIT_NUM;
+        p_tk->type = TK_LIT_NUM;
         // IF success 'src_txt' is advanced beyond the lexed num
         errno = 0;
         char *num_src_txt_end;
@@ -200,7 +200,7 @@ static void lex_num(struct Tk *p_tk)
 static void lex_dec_int_or_num(struct Tk *p_tk)
 {
         p_tk->type_group = G_LITERAL;
-        p_tk->type = LIT_INT;
+        p_tk->type = TK_LIT_INT;
         long int_src_i_start = src_i;
         char c;
         while (true) {
@@ -226,16 +226,16 @@ try_lex_num:
         lex_num(p_tk);
 }
 
-static void lex_op_other_or_assign(struct Tk *p_tk, enum TkTypeGroup op_type_group,
-                        enum TkType op_type, enum TkType assigner_type)
+static void lex_op_other_or_assign(struct Tk *p_tk, enum TkTypeGroup TK_OP_type_group,
+                        enum TkType TK_OP_type, enum TkType assigner_type)
 {
         if (GET_C() == '=') {
                 p_tk->type_group = G_OP_ASSIGN;
                 p_tk->type = assigner_type;
                 INCPOS();
         } else {
-                p_tk->type_group = op_type_group;
-                p_tk->type = op_type;
+                p_tk->type_group = TK_OP_type_group;
+                p_tk->type = TK_OP_type;
         }
 }
 
@@ -256,7 +256,7 @@ static void lex_keyword_or_identifier(struct Tk *p_tk)
         // -1 means key *not found*
         if (keyword_type_enum == -1) {
                 p_tk->type_group = G_MISC;
-                p_tk->type = IDENT;
+                p_tk->type = TK_IDENT;
                 p_tk->value.txt = malloc(len + 1);
                 if (p_tk->value.txt == NULL)
                         LEX_ERR("Failed memory alloc for identifier");
@@ -275,7 +275,7 @@ static void lex_keyword_or_identifier(struct Tk *p_tk)
 static void lex_char(struct Tk *p_tk)
 {
         p_tk->type_group = G_LITERAL;
-        p_tk->type = LIT_CHAR;
+        p_tk->type = TK_LIT_CHAR;
 
         char c = GET_C();
         if (c == '\'')
@@ -304,7 +304,7 @@ static void lex_char(struct Tk *p_tk)
 static void lex_str(struct Tk *p_tk)
 {
         p_tk->type_group = G_LITERAL;
-        p_tk->type = LIT_STR;
+        p_tk->type = TK_LIT_STR;
         long src_i_start = src_i;
         long escape_seq_count = 0;
         char c;
@@ -422,9 +422,9 @@ static inline void init_keywords_map(void)
         hashmap_init(&keywords_hashmap,
                      HASHMAP_INIT_SIZE + HASHMAP_INIT_SIZE / 4);
         for (int i = 0; i < (int) (sizeof keywords / sizeof *keywords); i++)
-                // Keyword enums are in order startiing from 'KW_NULL'
+                // Keyword enums are in order startiing from 'TK_KW_NULL'
                 hashmap_put_int(&keywords_hashmap, keywords[i], strlen(keywords[i]),
-                                (int) KW_NULL + i);
+                                (int) TK_KW_NULL + i);
         
 }
 
@@ -449,11 +449,11 @@ enum TkType lex_next(struct Tk *p_tk)
                 if (GET_C() == '=') {
                         INCPOS();
                         p_tk->type_group = G_OP_LOGICAL;
-                        p_tk->type = OP_EQ;
+                        p_tk->type = TK_OP_EQ;
                 }
                 else {
                         p_tk->type_group = G_OP_ASSIGN;
-                        p_tk->type = OP_AS;
+                        p_tk->type = TK_OP_AS;
                 }
                 break;
         case '+':
@@ -461,50 +461,50 @@ enum TkType lex_next(struct Tk *p_tk)
                 if (GET_C() == '+') {
                         INCPOS();
                         p_tk->type_group = G_OP_ARITH;
-                        p_tk->type = OP_INC;
+                        p_tk->type = TK_OP_INC;
                 } else
-                        lex_op_other_or_assign(p_tk, G_OP_ARITH, OP_ADD, OP_ADD_AS);
+                        lex_op_other_or_assign(p_tk, G_OP_ARITH, TK_OP_ADD, TK_OP_ADD_AS);
                 break;
         case '-':
                 INCPOS();
                 if (GET_C() == '-') {
                         INCPOS();
                         p_tk->type_group = G_OP_ARITH;
-                        p_tk->type = OP_DEC;
+                        p_tk->type = TK_OP_DEC;
                 }
                 else
-                        lex_op_other_or_assign(p_tk, G_OP_ARITH, OP_SUB, OP_SUB_AS);
+                        lex_op_other_or_assign(p_tk, G_OP_ARITH, TK_OP_SUB, TK_OP_SUB_AS);
                 break;
         case '/':
                 INCPOS();
-                lex_op_other_or_assign(p_tk, G_OP_ARITH, OP_DIV, OP_DIV_AS);
+                lex_op_other_or_assign(p_tk, G_OP_ARITH, TK_OP_DIV, TK_OP_DIV_AS);
                 break;
         case '*':
                 INCPOS();
-                lex_op_other_or_assign(p_tk, G_OP_ARITH, OP_MUL, OP_MUL_AS);
+                lex_op_other_or_assign(p_tk, G_OP_ARITH, TK_OP_MUL, TK_OP_MUL_AS);
                 break;
         case '!':
                 INCPOS();
                 if (GET_C() == '=') {
                         INCPOS();
                         p_tk->type_group = G_OP_LOGICAL;
-                        p_tk->type = OP_NOT_EQ;
+                        p_tk->type = TK_OP_NOT_EQ;
                 } else {
                         p_tk->type_group = G_OP_LOGICAL;
-                        p_tk->type = OP_NOT;
+                        p_tk->type = TK_OP_NOT;
                 } 
                 break;
         case '^':
                 INCPOS();
                 if (GET_C() == '^') {
                         INCPOS();
-                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, OP_BXOR, OP_BXOR_AS);
+                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, TK_OP_BXOR, TK_OP_BXOR_AS);
                 } else
-                        lex_op_other_or_assign(p_tk, G_OP_ARITH, OP_POW, OP_POW_AS);
+                        lex_op_other_or_assign(p_tk, G_OP_ARITH, TK_OP_POW, TK_OP_POW_AS);
                 break;
         case '%':
                 INCPOS();
-                lex_op_other_or_assign(p_tk, G_OP_ARITH, OP_MOD, OP_MOD_AS);
+                lex_op_other_or_assign(p_tk, G_OP_ARITH, TK_OP_MOD, TK_OP_MOD_AS);
                 break;
         case '&':
                 INCPOS();
@@ -512,32 +512,32 @@ enum TkType lex_next(struct Tk *p_tk)
                 if (GET_C() == '&') {
                         INCPOS();
                         p_tk->type_group = G_OP_LOGICAL;
-                        p_tk->type = OP_AND;
+                        p_tk->type = TK_OP_AND;
                 } else
-                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, OP_BAND, OP_BAND);
+                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, TK_OP_BAND, TK_OP_BAND);
                 break;
         case '|':
                 INCPOS();
                 if (GET_C() == '|') {
                         INCPOS();
                         p_tk->type_group = G_OP_LOGICAL;
-                        p_tk->type = OP_OR;
+                        p_tk->type = TK_OP_OR;
                 } else
-                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, OP_BOR, OP_BOR_AS);
+                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, TK_OP_BOR, TK_OP_BOR_AS);
                 break;
         case '<':
                 INCPOS();
                 if (GET_C() == '<') {
                         INCPOS();
-                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, OP_BSHL, OP_BSHL_AS);
+                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, TK_OP_BSHL, TK_OP_BSHL_AS);
                 } else {
                         if (GET_C() == '=') {
                                 INCPOS();
                                 p_tk->type_group = G_OP_LOGICAL;
-                                p_tk->type = OP_LESS_OR_EQ;
+                                p_tk->type = TK_OP_LESS_OR_EQ;
                         } else { 
                                 p_tk->type_group = G_OP_LOGICAL;
-                                p_tk->type = OP_LESS;
+                                p_tk->type = TK_OP_LESS;
                         }
                 }
                 break;
@@ -545,57 +545,66 @@ enum TkType lex_next(struct Tk *p_tk)
                 INCPOS();
                 if (GET_C() == '>') {
                         INCPOS();
-                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, OP_BSHR, OP_BSHR_AS);
+                        lex_op_other_or_assign(p_tk, G_OP_BITWISE, TK_OP_BSHR, TK_OP_BSHR_AS);
                 } else {
                         if (GET_C() == '=') {
                                 INCPOS();
                                 p_tk->type_group = G_OP_LOGICAL;
-                                p_tk->type = OP_GREATER_OR_EQ;
+                                p_tk->type = TK_OP_GREATER_OR_EQ;
                         } else { 
                                 p_tk->type_group = G_OP_LOGICAL;
-                                p_tk->type = OP_GREATER;
+                                p_tk->type = TK_OP_GREATER;
                         }
                 }
+                break;
+        case ',':
+                INCPOS();
+                p_tk->type_group = G_MISC;
+                p_tk->type = TK_COMMA;
                 break;
         case '[':
                 INCPOS();
                 p_tk->type_group = G_MISC;
-                p_tk->type = BRACKET_L;
+                p_tk->type = TK_BRACKET_L;
                 break;
         case ']':
                 INCPOS();
                 p_tk->type_group = G_MISC;
-                p_tk->type = BRACKET_R;
+                p_tk->type = TK_BRACKET_R;
                 break;
         case '{':
                 INCPOS();
                 p_tk->type_group = G_MISC;
-                p_tk->type = BRACE_L;
+                p_tk->type = TK_BRACE_L;
                 break;
         case '}':
                 INCPOS();
                 p_tk->type_group = G_MISC;
-                p_tk->type = BRACE_R;
+                p_tk->type = TK_BRACE_R;
                 break;
         case '(':
                 INCPOS();
                 p_tk->type_group = G_MISC;
-                p_tk->type = PAREN_L;
+                p_tk->type = TK_PAREN_L;
                 break;
         case ')':
                 INCPOS();
                 p_tk->type_group = G_MISC;
-                p_tk->type = PAREN_R;
+                p_tk->type = TK_PAREN_R;
                 break;
         case '?':
                 INCPOS();
                 p_tk->type_group = G_MISC;
-                p_tk->type = QUESTION;
+                p_tk->type = TK_QUESTION;
                 break;
+        case ';':
+                INCPOS();
+                p_tk->type_group = G_MISC;
+                p_tk->type = TK_SEMICOLON;
         case ':':
                 INCPOS();
                 p_tk->type_group = G_MISC;
-                p_tk->type = COLON;
+                p_tk->type = TK_COLON;
                 break;
         case '\'':        // 'LIT_CHAR'
                 INCPOS();
@@ -626,7 +635,7 @@ enum TkType lex_next(struct Tk *p_tk)
                 else {
                         INCPOS();
                         p_tk->type_group = G_MISC;
-                        p_tk->type = PERIOD;
+                        p_tk->type = TK_PERIOD;
                 }
                 break;
         case '_':
@@ -636,7 +645,7 @@ enum TkType lex_next(struct Tk *p_tk)
                 if (src_i != src_len)
                         LEX_ERR("Null terminator '\\0' should be at end of file");
                 p_tk->type_group = G_MISC;
-                p_tk->type = END;
+                p_tk->type = TK_END;
                 // cleanup, since end of file
                 hashmap_free(&keywords_hashmap);
                 REACHED_END = true;
