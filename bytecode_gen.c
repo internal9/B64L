@@ -1,8 +1,12 @@
+/* NOTES:
+ * - if a bytecode out file is being written to, & errors occurs, said file remains with the unfinished bytecode lol
+ */
+
 /* TODO:
- * clean fclose handling of 'bytecode_out_file' if emit fails
- * make it so all functions can call next_tk, use peeking
- * Still need to standard 'lex_next' & 'next_tk' & 'current_tk'
- * TBD: simplify 'next_tk' to just a current tk & next / peeked tk, for pushback features
+ * - clean fclose handling of 'bytecode_out_file' if emit fails
+ * - make it so all functions can call next_tk, use peeking
+ * - Still need to standard 'lex_next' & 'next_tk' & 'current_tk'
+ * - TBD: simplify 'next_tk' to just a current tk & next / peeked tk, for pushback features
  */
 
 // INT ARRAY name[size1][size2]
@@ -18,28 +22,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// TODO later: simplify
-#define err_at(line, column, msg) (fprintf(stderr, "(L%ld C%ld) " msg "\n", line, column), \
-                            exit(EXIT_FAILURE))
-#define err_fmt_at(line, column, fmt, ...) (fprintf(stderr, "(L%ld C%ld) " fmt "\n", \
-                                         line, column, __VA_ARGS__), \
-                                            exit(EXIT_FAILURE))
-
-// passing pointer prob a lil unnecessary
-#define tk_err(p_tk, MSG) (fprintf(stderr, "(L%ld C%ld) " MSG "\n", (p_tk)->line, (p_tk)->column), \
-                            exit(EXIT_FAILURE))
-#define tk_err_fmt(p_tk, FMT, ...) (fprintf(stderr, "(L%ld C%ld) " MSG "\n", \
-                                         (p_tk)->line, (p_tk)->column, __VA_ARGS__), \
-                                            exit(EXIT_FAILURE))
-
 // static struct Tk tk;
 // TBD: static struct Tk buf[some arbitrary num like 512];
 
 // emit(MOVSI, st_addr(), rm(bsize(arg)), arg)
 
 #define MAX_ARRAY_DIMENSION_COUNT 5
-
-static long ip;
 
 enum DataType {
     BOOL,
@@ -170,18 +158,28 @@ static void tk_buf_clear(void) {
 static struct HashMap symbol_table;
 static int scope_level;
 /* static char *enclosing_func_name = NULL; */
-static bool in_func = false;
-static long addr = 0;
+
 
 static void
-emit_double(double value) {
+on_err() {
 
 }
 
-static void
-emit_i64(int64_t value) {
 
-}
+// TODO later: simplify
+#define err_at(line, column, msg) (fprintf(stderr, "(L%ld C%ld) " msg "\n", line, column), \
+                            exit(EXIT_FAILURE))
+#define err_fmt_at(line, column, fmt, ...) (fprintf(stderr, "(L%ld C%ld) " fmt "\n", \
+                                         line, column, __VA_ARGS__), \
+                                            exit(EXIT_FAILURE))
+
+// passing pointer prob a lil unnecessary
+#define tk_err(p_tk, MSG) (fprintf(stderr, "(L%ld C%ld) " MSG "\n", (p_tk)->line, (p_tk)->column), \
+                            exit(EXIT_FAILURE))
+#define tk_err_fmt(p_tk, FMT, ...) (fprintf(stderr, "(L%ld C%ld) " MSG "\n", \
+                                         (p_tk)->line, (p_tk)->column, __VA_ARGS__), \
+                                            exit(EXIT_FAILURE))
+
 
 static FILE *bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
 static uint8_t *bytecode_buffer = NULL;	// not 'NULL' with flag '-r'
