@@ -172,12 +172,6 @@ static int scope_level;
 /* static char *enclosing_func_name = NULL; */
 static bool in_func = false;
 static long addr = 0;
-/*
-	also used to index bytecode buf,
-	otherwise just used for addrs while file offset increases on its own
-*/
-static long prog_counter = 0;
-/* static int64_t rsp = -1; ? */
 
 static void
 emit_double(double value) {
@@ -191,9 +185,18 @@ emit_i64(int64_t value) {
 
 static FILE *bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
 static uint8_t *bytecode_buffer = NULL;	// not 'NULL' with flag '-r'
-static long bytecode_size = 0;			// in # of 'uint8_t's, currently ONLY used for 'bytecode_buffer' (may change)
+static long bytecode_buffer_size = 0;	// in # of 'uint8_t's
 
+/*
+	also used to index bytecode buf,
+	otherwise just used for addrs while file offset increases on its own
+*/
+static long prog_counter = 0;
+/* static int64_t rsp = -1; ? */
+
+// NOTE: prog_counter at end of bytecode compilation == 'bytecode_size'
 // TODO: free memory & bytecode file on error
+// NOTE: too lazy to check overflow for 'long'
 static void
 emit(uint8_t byte) {
 	if (bytecode_out_file == NULL) {
@@ -203,20 +206,28 @@ emit(uint8_t byte) {
 	}
 	else {
 		// TODO: check this check
-		if (prog_counter > (bytecode_size - 1))
+		if (prog_counter > (bytecode_buffer_size - 1))
 			if ((bytecode_buffer = realloc(bytecode_buffer, bytecode_size * 2)) = NULL)
 				PERREXIT("Failed to resize bytecode during compilation");
-		bytecode_buffer[prog_counter] = byte;
+		bytecode_buffer[prog_counter++] = byte;
 	}
 }
 
 static void
 emit_n(int n, uint8_t bytes[n]) {
+	// temp
+	if (n < 1) PERREXIT("n cannot < 1");
 	if (bytecode_out_file == NULL) {
-
+		if (fwrite(bytes, sizeof(uint8_t), n, bytecode_out_file) != n)
+			PERREXIT("Failed to write to bytecode out file during compilation");
 	}
 	else {
-
+		// TODO: check this check
+		if ((prog_counter + (n-1)) > (bytecode_buffer_size - 1))
+			if ((bytecode_buffer = realloc(bytecode_buffer, bytecode_size * 2)) = NULL)
+				PERREXIT("Failed to resize bytecode during compilation");
+		memcpy(bytecode_buffer + prog_counter, bytes, n);
+		prog_counter += n-1;
 	}
 }
 
