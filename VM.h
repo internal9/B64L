@@ -2,6 +2,7 @@
 // 'LOAD' instr possibly needed
 // Explicit values just to make stuff easier (yeah i gonna fix this later)
 #include <stdint.h>
+#include <stdio.h>
 
 #define VM_STACK_SIZE 512	// i sure do love arbitrary numbers, will change later
 
@@ -97,12 +98,12 @@ enum OPCODE
 enum OPERAND_READ_MODE
 {
 	MODE_USE_REG = 0,
-	
+
 	/*
 		If instructions operates on reg or stack location:
 			 They expect sizeof(int64_t) or sizeof(double) amount of bits,
 			 *depending* on if a reg or floating-point reg is being used
-	
+
 		If instruction can use literals:
 			They expect sizeof(int64_t) or sizeof(double) amount of bits
 			*depending* on instruction
@@ -114,7 +115,7 @@ enum OPERAND_READ_MODE
 };
 
 enum REG
-{	
+{
 	REG_R1 = 0,
 	REG_R2 = 1,
 	REG_RAX = 2,
