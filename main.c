@@ -18,23 +18,24 @@
 #define RUN_SRC_OUTPUT_BYTECODE_FILE "-ro" // run src & output bytecode file (w/ specified name)
 #define RUN_BYTECODE_FILE            "-rb" // run bytecode file (NOTE: maybe handle endianness?)
 
-// barebones for testing purposes
+// barebones for testing purposes & not clean
 int main(int argc, const char *argv[])
 {
         if (argc < 2)
                 ERREXIT("Expected one source file to compile to bytecode,"
                         " or one bytecode file to execute.");
-        if (argc > 3)
+        if (argc > 4)   // + 1 accounting for argv[0] which is always this program's name
                 ERREXIT("Excess arguments, expected optional flag and/or"
                         " one source file to compile to bytecode,"
-                        " or one bytecode file to execute.");
+                        " and/or one bytecode file to execute / output to.");
 
        // src file name with flags '-c', '-r', & '-rp', otherwise bytecode file name with flag '-rb'
-        const char *file_name = argv[2];
-        // assume flag '-r'
+        const char *file_name = argv[1];
+        // assume default flag '-r': assume argv[1] is src file name
         if (argc == 2) {
                 goto default_flag;
         }
+        // assume args: argv[1] = flags: '-r', '-rb', or '-c', argv[2] = file name
         else if (argc == 3) {
                 const char *flag = argv[1];
                 if (strcmp(flag, COMPILE_SRC_ONLY)) {
@@ -45,14 +46,20 @@ int main(int argc, const char *argv[])
                 }
                 else if (strcmp(flag, RUN_SRC_NO_BYTECODE_FILE)) {
                 default_flag:
+                        printf("%s\n", file_name);
                         lex_init(file_name);
                         //vm_run(bytecode_gen_nofile(file_name));
                 }
-                else if (strcmp(flag, RUN_SRC_OUTPUT_BYTECODE_FILE)) {
-                        // const char *bytecode_file_name = argv[3];
-                }
                 else if (strcmp(flag, RUN_BYTECODE_FILE)) {
 
+                }
+                else
+                        ERREXIT("Invalid flag '%s'\n", flag);
+        }
+        else if (argc == 4) {
+                const char *flag = argv[1];
+                if (strcmp(flag, RUN_SRC_OUTPUT_BYTECODE_FILE)) {
+                        // const char *bytecode_file_name = argv[3];
                 }
                 else
                         ERREXIT("Invalid flag '%s'\n", flag);
