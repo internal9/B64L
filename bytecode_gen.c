@@ -47,6 +47,7 @@ enum DataType {
     INT,	// remember 'TK_LIT_INT' exists too
     NUM,
     STRING,
+	// incomplete types, use base (above) types to make a full type
     ARRAY,
     STRUCT
 };
@@ -171,6 +172,11 @@ static int scope_level;
 /* static char *enclosing_func_name = NULL; */
 static bool in_func = false;
 static long addr = 0;
+/*
+	also used to index bytecode buf,
+	otherwise just used for addrs while file offset increases on its own
+*/
+static long prog_counter = 0;
 /* static int64_t rsp = -1; ? */
 
 static void
@@ -183,28 +189,35 @@ emit_i64(int64_t value) {
 
 }
 
-static void
-emit_opcode() {
-
-}
-
-static FILE *bytecode_out_file = NULL;		// not 'NULL' with flags '-c' or '-ro
+static FILE *bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
 static uint8_t *bytecode_buffer = NULL;	// not 'NULL' with flag '-r'
+static long bytecode_size = 0;			// in # of 'uint8_t's, currently ONLY used for 'bytecode_buffer' (may change)
 
-static bool
+// TODO: free memory & bytecode file on error
+static void
 emit(uint8_t byte) {
 	if (bytecode_out_file == NULL) {
 		if (putc(byte, bytecode_out_file) == EOF)
+			// TODO: better error handling,
 			PERREXIT("Failed to write byte to bytecode out file");
 	}
 	else {
-
+		// TODO: check this check
+		if (prog_counter > (bytecode_size - 1))
+			if ((bytecode_buffer = realloc(bytecode_buffer, bytecode_size * 2)) = NULL)
+				PERREXIT("Failed to resize bytecode during compilation");
+		bytecode_buffer[prog_counter] = byte;
 	}
 }
 
 static void
 emit_n(int n, uint8_t bytes[n]) {
+	if (bytecode_out_file == NULL) {
 
+	}
+	else {
+
+	}
 }
 
 #define INSTR_ARG_REG(opcode) (uint8_t) (0x80 | opcode) // if two args, arg2 is reg, if one arg, arg is reg
@@ -678,6 +691,8 @@ uint8_t *
 bytecode_gen_nofile(void) {
     /* init */
     hashmap_init(&symbol_table, HASHMAP_INIT_SIZE);
+	if ((bytecode_buffer = malloc(256)) == NULL) PERREXIT("Failed to allocate for bytecode compilation");
+	
 
     // 'main.c' initialized lexer, maybe change that cuz a lil confusing
     // expr(next_tk(), 0, true);
@@ -698,7 +713,6 @@ bytecode_gen_file(const char *out_file_name) {
                 free(bytecode_out_file);
                 PERREXIT("Failed to close bytecode out file");
         }
-        src_txt[src_len] = '\0';
 	*/
 	if (fclose(bytecode_out_file) != 0) PERREXIT("Failed to close bytecode out file");
     return bytecode_out_file;
