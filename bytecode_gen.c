@@ -235,31 +235,31 @@ emit_n(int n, uint8_t bytes[n]) {
 #define INSTR_ARG_LIT(opcode) (uint8_t) (0x00 | opcode)
 
 static struct Symbol *
-sym_push(enum SymType type, struct Tk *p_TK_IDENT_tk) {
+sym_push(enum SymType type, struct Tk *p_ident_tk) {
     /* pls arena alloc... or just stack allocate */
     struct Symbol *p_sym = malloc(sizeof(struct Symbol));
-    p_sym->TK_IDENT = p_TK_IDENT_tk->value.txt; // valid as long as tk remains in tk buffer
+    p_sym->TK_IDENT = p_ident_tk->value.txt; // valid as long as tk remains in tk buffer
     p_sym->type = type;
-    p_sym->line = p_TK_IDENT_tk->line;
-    p_sym->column = p_TK_IDENT_tk->column;
+    p_sym->line = p_ident_tk->line;
+    p_sym->column = p_ident_tk->column;
     p_sym->scope_level = scope_level;
     p_sym->addr = addr++;
     hashmap_put_ptr(&symbol_table,
-                    p_TK_IDENT_tk->value.txt,
-                    strlen(p_TK_IDENT_tk->value.txt),
+                    p_ident_tk->value.txt,
+                    strlen(p_ident_tk->value.txt),
                     (void *) p_sym);
     return p_sym;
 }
 
 static struct Symbol *
-sym_get(struct Tk *p_TK_IDENT_tk) {
+sym_get(struct Tk *p_ident_tk) {
     return hashmap_get_ptr(&symbol_table,
-                           p_TK_IDENT_tk->value.txt,
-                           strlen(p_TK_IDENT_tk->value.txt));
+                           p_ident_tk->value.txt,
+                           strlen(p_ident_tk->value.txt));
 }
 
 static bool
-sym_pop(int count) // struct Tk* p_TK_IDENT_tk) ?
+sym_pop(int count) // struct Tk* p_ident_tk) ?
 {
     // handle dynamically allocated stuff
     for (int i = 0; i < count; i++) {
@@ -272,11 +272,11 @@ sym_pop(int count) // struct Tk* p_TK_IDENT_tk) ?
 
 static inline int op_prec(enum TkType tk_type) {
     switch (tk_type) {
-        case OP_ADD:
-        case OP_SUB: return 1;
-        case OP_MUL:
-        case OP_DIV: return 2;
-        case OP_POW: return 3;
+        case TK_OP_ADD:
+        case TK_OP_SUB: return 1;
+        case TK_OP_MUL:
+        case TK_OP_DIV: return 2;
+        case TK_OP_POW: return 3;
         default: return -1;
     }
 }
@@ -284,17 +284,17 @@ static inline int op_prec(enum TkType tk_type) {
 // temp debug
 static void instr_debug(enum TkType type) {
     switch (type) {
-        case OP_ADD: puts("ADD R1, R2");
+        case TK_OP_ADD: puts("ADD R1, R2");
             break;
-        case OP_SUB: puts("SUB R1, R2");
+        case TK_OP_SUB: puts("SUB R1, R2");
             break;
-        case OP_MUL: puts("MUL R1, R2");
+        case TK_OP_MUL: puts("MUL R1, R2");
             break;
-        case OP_DIV: puts("DIV R1, R2");
+        case TK_OP_DIV: puts("DIV R1, R2");
             break;
-        case OP_POW: puts("POW R1, R2");
+        case TK_OP_POW: puts("POW R1, R2");
             break;
-        default: break;
+        default:		puts("instr_debug: 'type' is not an op tk");
     }
 }
 
@@ -302,14 +302,14 @@ static void instr_debug(enum TkType type) {
 static int
 data_type_from_kw(enum TkType TK_KW_type) {
     switch (TK_KW_type) {
-        case TK_KW_BOOL: return BOOL;
-        case TK_KW_CHAR: return CHAR;
-        case TK_KW_INT: return INT;
-        case TK_KW_NUM: return NUM;
-        case TK_KW_STRING: return STRING;
-        case TK_KW_ARRAY: return ARRAY;
-        case TK_KW_STRUCT: return STRUCT;
-        default: return -1;
+        case TK_KW_BOOL: 	return BOOL;
+        case TK_KW_CHAR: 	return CHAR;
+        case TK_KW_INT: 	return INT;
+        case TK_KW_NUM: 	return NUM;
+        case TK_KW_STRING: 	return STRING;
+        case TK_KW_ARRAY: 	return ARRAY;
+        case TK_KW_STRUCT: 	return STRUCT;
+        default: 			return -1;
     }
 }
 
