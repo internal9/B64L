@@ -1,4 +1,4 @@
-// TBD: open & handle all files here and just pass 'FILE *'s to VM, lex, & bytecode_gen 
+// TBD: open & handle all files here and just pass 'FILE *'s to VM, lex, & bytecode_gen
 /*
   NOTES:
   - '-c' Only compile src and output bytecode file, no execution
@@ -40,19 +40,19 @@ int main(int argc, const char *argv[])
                 if (strcmp(flag, COMPILE_SRC_ONLY)) {
                         const char *bytecode_file_name = argv[3];
                         lex_init(file_name);
-                        bytecode_gen
+                        //bytecode_gen
                         // bytes = bytecode_gen_file();
                 }
                 else if (strcmp(flag, RUN_SRC_NO_BYTECODE_FILE)) {
                 default_flag:
                         lex_init(file_name);
-                        vm_run(bytecode_gen_nofile(file_name));
+                        //vm_run(bytecode_gen_nofile(file_name));
                 }
-                else if (strcmp(flag, RUN_SRC_OUTPUT_BYTECODE_FILE) {
+                else if (strcmp(flag, RUN_SRC_OUTPUT_BYTECODE_FILE)) {
                         // const char *bytecode_file_name = argv[3];
                 }
-                else if (strcmp(flag, RUN_BYTECODE_FILE) {
-        
+                else if (strcmp(flag, RUN_BYTECODE_FILE)) {
+
                 }
                 else
                         ERREXIT("Invalid flag '%s'\n", flag);
