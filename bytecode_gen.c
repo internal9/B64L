@@ -81,7 +81,7 @@ struct Symbol {
 		struct {
 		} label;
 	} info;
-	const char *TK_IDENT;
+	const char* ident;
     enum SymType type;
     long line, column;
     long addr;
@@ -93,7 +93,7 @@ struct Symbol {
 // forward reference to a fn, calling a fn that doesn't exist (presumbly declared later / typo / doesn't exist)
 struct ForwardFnCall {
     long line, column;
-    struct Symbol **params_array;
+    struct Symbol** params_array;
     int param_count;
     /* default is NULL, *unless* if the fn call
     is in an assignment expression, declaration or not */
@@ -177,8 +177,8 @@ static bool compile_error = false;
 #define tk_err_fmt(p_tk, fmt, ...) 		   err_fmt_at(p_tk->line, p_tk->column, fmt, __VA_ARGS__);
 
 
-static FILE *bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
-static uint8_t *bytecode_buffer = NULL;	// not 'NULL' with flag '-r'
+static FILE* bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
+static uint8_t* bytecode_buffer = NULL;	// not 'NULL' with flag '-r'
 static long bytecode_buffer_size = 0;	// in # of 'uint8_t's
 
 /*
@@ -228,7 +228,7 @@ emit_n(int n, uint8_t bytes[n]) {
 #define INSTR_ARG_REG(opcode) (uint8_t) (0x80 | opcode) // if two args, arg2 is reg, if one arg, arg is reg
 #define INSTR_ARG_LIT(opcode) (uint8_t) (0x00 | opcode)
 
-static struct Symbol *
+static struct Symbol*
 sym_push(enum SymType type, struct Tk *p_ident_tk) {
     /* pls arena alloc... or just stack allocate */
     struct Symbol *p_sym = malloc(sizeof(struct Symbol));
@@ -245,7 +245,7 @@ sym_push(enum SymType type, struct Tk *p_ident_tk) {
     return p_sym;
 }
 
-static struct Symbol *
+static struct Symbol*
 sym_get(struct Tk *p_ident_tk) {
     return hashmap_get_ptr(&symbol_table,
                            p_ident_tk->value.txt,
