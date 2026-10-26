@@ -33,13 +33,46 @@
 */
 #define PERREXIT(...) (fprintf(stderr, __VA_ARGS__), fputs(": ", stderr), perror(NULL), exit(errno))
 #define MAX(x, y) (((x) >= (y)) ? (x) : (y))
+#define STACK_SIZE 512	// i sure do love arbitrary numbers, will change later
+
+// should just remove lol
+// Specify size to use for operands that can either be regs or literals, to save bytes ig. Orrr just read a reg
+enum OPERAND_READ_MODE
+{
+	USE_REG = 0,
+	
+	/*
+		If instructions operates on reg or stack location:
+			 They expect sizeof(int64_t) or sizeof(double) amount of bits,
+			 *depending* on if a reg or floating-point reg is being used
+	
+		If instruction can use literals:
+			They expect sizeof(int64_t) or sizeof(double) amount of bits
+			*depending* on instruction
+	*/
+	EIGHT = 1,
+	HALF = 2,
+	FULL = 3,
+
+};
+
+enum REG
+{	
+	R1 = 0,
+	R2 = 1,
+	RAX = 2,
+	RBP = 3,
+	PRBP = 4,
+	RSP = 5,
+	FR1 = 6,
+	FR2 = 7
+};
 
 // wish i could change enum base type in C99
 #define IS_I_REG(int_val) ((int) (int_val) >= (int) R1 && (int) (int_val) <= (int) PRBP)
 #define IS_FP_REG(int_val) ((int) (int_val) == (int) FR1 || (int) (int_val) == (int) FR2)
 #define IS_REG(int_val) ((int) (int_val) >= (int) R1 && (int) (int_val) <= (int) FR2)
 
-// TBD: combine integer & float regs & leave it up to interpretation?
 int64_t i_regs[] = {
 	[R1] = 0,
 	[R2] = 0,
@@ -323,7 +356,7 @@ static void op_movsi(enum OPERAND_READ_MODE operand_2_read_mode)
 {
 	uint8_t stack_addr_info = expect_byte(ip + 1, "movsi: expected info byte for reading stack address");
 	int stack_addr = read_stack_addr(stack_addr_info);
-
+	
 	if (operand_2_read_mode == USE_REG)
 	{
 		enum REG src_reg = expect_reg(ip + 2, "movsf: expected integer src reg for value");
@@ -344,7 +377,7 @@ static void op_movsf(enum OPERAND_READ_MODE operand_2_read_mode)
 {
 	uint8_t stack_addr_info = expect_byte(ip + 1, "movsf: expected info byte for reading stack address");
 	int stack_addr = read_stack_addr(stack_addr_info);
-
+	
 	if (operand_2_read_mode == USE_REG)
 	{
 		enum REG src_reg = expect_reg(ip + 2, "movsf: expected floating-point src reg for value");
@@ -364,7 +397,7 @@ static void op_movsf(enum OPERAND_READ_MODE operand_2_read_mode)
 static void op_push();
 static void op_pop(enum OPERAND_READ_MODE operand_read_mode)
 {
-
+        
 }
 
 // branching operations
@@ -403,7 +436,7 @@ static void op_jmp(enum OPERAND_READ_MODE operand_read_mode)
                 printf("JMP AMOUNT BYTES: %.8x\n", jmp_amount);
 
         }
-
+        
         // implement overflow handling
         if (jmp_amount == 0)
                 ERREXIT("jmp: amount cannot == 0");
@@ -490,12 +523,11 @@ static void init_bytecode(FILE *p_bytecode_file)
 	// assuming bytecode files don't have an EOF indicator (Linux)
 	if (fread(p_bytecode, 1, (size_t) file_size, p_bytecode_file) != (size_t) file_size)	// if only file_size was size_t instead of long..
 		PERREXIT("Failed to read bytecode file");
-
+	
 	// debug
 	printf("Bytecode file size: %lu\n", file_size);
 }
 
-// TODO: remove 'main' & make VM.c part of executable
 int main(int argc, char *argv[])
 {
 	if (argc != 2)
