@@ -160,25 +160,24 @@ static int scope_level;
 /* static char *enclosing_func_name = NULL; */
 
 
-static void
-on_err() {
-
-}
-
+static bool compile_error = false;
 
 // TODO later: simplify
-#define err_at(line, column, msg) (fprintf(stderr, "(L%ld C%ld) " msg "\n", line, column), \
-                            exit(EXIT_FAILURE))
+#define err_fmt(fmt, ...) (fprintf(stderr, fmt "\n", __VA_ARGS__), (compile_error = 1))
+#define err(msg) 		  (fprintf(stderr, msg "\n"), (compile_error = true))
+	
+#define err_at(line, column, msg) 		   (fprintf(stderr, "(L%ld C%ld) " msg "\n", line, column), \
+                            	  		   (compile_error = true))
 #define err_fmt_at(line, column, fmt, ...) (fprintf(stderr, "(L%ld C%ld) " fmt "\n", \
-                                         line, column, __VA_ARGS__), \
-                                            exit(EXIT_FAILURE))
+                                            line, column, __VA_ARGS__), \
+                                           (compile_error = true))
 
 // passing pointer prob a lil unnecessary
-#define tk_err(p_tk, MSG) (fprintf(stderr, "(L%ld C%ld) " MSG "\n", (p_tk)->line, (p_tk)->column), \
-                            exit(EXIT_FAILURE))
-#define tk_err_fmt(p_tk, FMT, ...) (fprintf(stderr, "(L%ld C%ld) " MSG "\n", \
-                                         (p_tk)->line, (p_tk)->column, __VA_ARGS__), \
-                                            exit(EXIT_FAILURE))
+#define tk_err(p_tk, MSG) 				   (fprintf(stderr, "(L%ld C%ld) " MSG "\n", (p_tk)->line, (p_tk)->column), \
+                            			   (compile_error = true))
+#define tk_err_fmt(p_tk, FMT, ...) 		   (fprintf(stderr, "(L%ld C%ld) " MSG "\n", \
+                                           (p_tk)->line, (p_tk)->column, __VA_ARGS__), \
+                                           (compile_error = true))
 
 
 static FILE *bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
