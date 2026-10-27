@@ -118,7 +118,7 @@ static void gen_switch();
 static void gen_jmp();
 
 static struct Tk tk;
-static struct Tk buf[512];
+static struct Tk buf[256];
 static int buf_i = 0;
 static int tk_count = 0; // prob simplify this
 
@@ -660,9 +660,9 @@ gen_block(void) {
     struct Tk *p_tk = next_tk();
     for (;;) {
         switch (p_tk->type) {
-            case TK_IDENT:
-                // gen_from_TK_IDENT();
-                break;
+            case TK_IDENT: {
+				
+			}
             case TK_KW_BOOL:
             case TK_KW_CHAR:
             case TK_KW_INT:
