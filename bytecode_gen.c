@@ -165,7 +165,7 @@ static bool compile_error = false;
 // TODO later: simplify
 #define err_fmt(fmt, ...) (fprintf(stderr, fmt "\n", __VA_ARGS__), (compile_error = 1))
 #define err(msg) 		  (fprintf(stderr, msg "\n"), (compile_error = true))
-	
+
 #define err_at(line, column, msg) 		   (fprintf(stderr, "(L%ld C%ld) " msg "\n", line, column), \
                             	  		   (compile_error = true))
 #define err_fmt_at(line, column, fmt, ...) (fprintf(stderr, "(L%ld C%ld) " fmt "\n", \
@@ -201,7 +201,7 @@ emit(uint8_t byte) {
 	else {
 		// TODO: check this check
 		if (prog_counter > (bytecode_buffer_size - 1))
-			if ((bytecode_buffer = realloc(bytecode_buffer, bytecode_size * 2)) = NULL)
+			if ((bytecode_buffer = realloc(bytecode_buffer, bytecode_buffer_size * 2)) == NULL)
 				PERREXIT("Failed to resize bytecode during compilation");
 		bytecode_buffer[prog_counter++] = byte;
 	}
@@ -218,7 +218,7 @@ emit_n(int n, uint8_t bytes[n]) {
 	else {
 		// TODO: check this check
 		if ((prog_counter + (n-1)) > (bytecode_buffer_size - 1))
-			if ((bytecode_buffer = realloc(bytecode_buffer, bytecode_size * 2)) = NULL)
+			if ((bytecode_buffer = realloc(bytecode_buffer, bytecode_buffer_size * 2)) == NULL)
 				PERREXIT("Failed to resize bytecode during compilation");
 		memcpy(bytecode_buffer + prog_counter, bytes, n);
 		prog_counter += n-1;
@@ -232,12 +232,13 @@ static struct Symbol*
 sym_push(enum SymType type, struct Tk *p_ident_tk) {
     /* pls arena alloc... or just stack allocate */
     struct Symbol *p_sym = malloc(sizeof(struct Symbol));
-    p_sym->TK_IDENT = p_ident_tk->value.txt; // valid as long as tk remains in tk buffer
+    p_sym->ident = p_ident_tk->value.txt; // valid as long as tk remains in tk buffer
     p_sym->type = type;
     p_sym->line = p_ident_tk->line;
     p_sym->column = p_ident_tk->column;
     p_sym->scope_level = scope_level;
-    p_sym->addr = addr++;
+    // TODO: decide how handle addr for global & local objects
+    // p_sym->addr = addr++;
     hashmap_put_ptr(&symbol_table,
                     p_ident_tk->value.txt,
                     strlen(p_ident_tk->value.txt),
@@ -523,7 +524,7 @@ gen_assign(struct Tk *p_TK_IDENT_tk)
 {
     struct Symbol *p_sym = sym_get(p_TK_IDENT_tk);
 	if (p_sym == NULL)
-		tk_err(p_TK_IDENT_tk, "TK_IDENTifier sym doesn't exist");
+		tk_err(p_TK_IDENT_tk, "identifier sym doesn't exist");
 
     switch (p_sym->type) {
 		case LABEL: tk_err(p_TK_IDENT_tk, "Cannot assign to label");
@@ -579,7 +580,7 @@ static void
 gen_decl_scalar_var(struct CompleteDataTypeInfo* p_complete_data_type_info) {
     struct Tk *p_TK_IDENT_tk = next_tk();
     if (p_TK_IDENT_tk->type != TK_IDENT)
-        tk_err(p_TK_IDENT_tk, "Expected TK_IDENTifier");
+        tk_err(p_TK_IDENT_tk, "Expected identifier");
 
     struct Symbol *p_sym = sym_push(VAR, p_TK_IDENT_tk);
     p_sym->info.complete_data_type_info = *p_complete_data_type_info;
@@ -611,18 +612,17 @@ as nested fns *aren't* allowed */
 static void
 gen_decl_fn(struct CompleteDataTypeInfo *p_return_data_type_info) // enum DataType ret_type)
 {
-    in_func = true;
     // struct Tk *p_TK_IDENT_tk;
 
 
-    enum DataType ret_type = data_type_from_kw(lex_next(&tk));
-    if (ret_type == ARRAY || ret_type == STRUCT)
-        tk_err(&tk, "Aggregate return type not allowed");
+   // enum DataType ret_type = data_type_from_kw(lex_next(&tk));
+  //  if (ret_type == ARRAY || ret_type == STRUCT)
+      //  tk_err(&tk, "Aggregate return type not allowed");
 
 
-    if (lex_next(&tk) != TK_IDENT) /* error */ ;
-    struct Symbol *p_sym = sym_push(FUNC, &tk);
-    p_sym->info.func.return_data_type_info = *p_return_data_type_info;
+  //  if (lex_next(&tk) != TK_IDENT) /* error */ ;
+    //struct Symbol *p_sym = sym_push(FUNC, &tk);
+   // p_sym->info.func.return_data_type_info = *p_return_data_type_info;
     // use array instead of hashmap? hashmap_init(sym->info.func.params, /*random number*/ 4);
     // hashmap_init(sym->info.func.symbol_table);
 
@@ -700,7 +700,7 @@ bytecode_gen_nofile(void) {
     /* init */
     hashmap_init(&symbol_table, HASHMAP_INIT_SIZE);
 	if ((bytecode_buffer = malloc(256)) == NULL) PERREXIT("Failed to allocate for bytecode compilation");
-	
+
 
     // 'main.c' initialized lexer, maybe change that cuz a lil confusing
     // expr(next_tk(), 0, true);
