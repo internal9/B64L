@@ -159,27 +159,35 @@ static struct HashMap symbol_table;
 static int scope_level;
 /* static char *enclosing_func_name = NULL; */
 
+static FILE* bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
+static uint8_t* bytecode_buffer = NULL;	// not 'NULL' with flag '-r'
+static long bytecode_buffer_size = 0;	// in # of 'uint8_t's
 
-static bool compile_error = false;
+
+// TODO: and then free the tks whatever (decide next, peek, etc tk features first)
+static void on_err(void)
+{
+	if (bytecode_out_file == NULL)
+		free(bytecode_buffer);
+	else
+		if (fclose(bytecode_out_file) != 0)
+			PERREXIT("Failed to close bytecode outfile on compile error");
+	exit(EXIT_FAILURE);
+}
 
 // TODO later: simplify
-#define err_fmt(fmt, ...) (fprintf(stderr, fmt "\n", __VA_ARGS__), (compile_error = 1))
-#define err(msg) 		  (fprintf(stderr, msg "\n"), (compile_error = true))
+#define err_fmt(fmt, ...) (fprintf(stderr, fmt "\n", __VA_ARGS__), on_err())
+#define err(msg) 		  (fprintf(stderr, msg "\n"), on_err())
 
 #define err_at(line, column, msg) 		   (fprintf(stderr, "(L%ld C%ld) " msg "\n", line, column), \
-                            	  		   (compile_error = true))
+                            	  		    on_err())
 #define err_fmt_at(line, column, fmt, ...) (fprintf(stderr, "(L%ld C%ld) " fmt "\n", \
                                             line, column, __VA_ARGS__), \
-                                           (compile_error = true))
+                                            on_err())
 
 // passing pointer prob a lil unnecessary
 #define tk_err(p_tk, msg) 				   err_at(p_tk->line, p_tk->column, msg);
 #define tk_err_fmt(p_tk, fmt, ...) 		   err_fmt_at(p_tk->line, p_tk->column, fmt, __VA_ARGS__);
-
-
-static FILE* bytecode_out_file = NULL;	// not 'NULL' with flags '-c' or '-ro
-static uint8_t* bytecode_buffer = NULL;	// not 'NULL' with flag '-r'
-static long bytecode_buffer_size = 0;	// in # of 'uint8_t's
 
 /*
 	also used to index bytecode buf,
