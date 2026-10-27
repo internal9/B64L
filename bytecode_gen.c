@@ -236,20 +236,23 @@ emit_n(int n, uint8_t bytes[n]) {
 #define INSTR_ARG_REG(opcode) (uint8_t) (0x80 | opcode) // if two args, arg2 is reg, if one arg, arg is reg
 #define INSTR_ARG_LIT(opcode) (uint8_t) (0x00 | opcode)
 
-// TBD
-// static struct Symbol symbols[512]; 
+static struct Symbol symbol_buffer[512]; 
+static int symbol_buffer_n = 0;
 
 static struct Symbol*
 sym_push(enum SymType type, struct Tk *p_ident_tk) {
     /* pls arena alloc... or just stack allocate */
-    struct Symbol *p_sym = malloc(sizeof(struct Symbol));
-    p_sym->ident = p_ident_tk->value.txt; // valid as long as tk remains in tk buffer
-    p_sym->type = type;
-    p_sym->line = p_ident_tk->line;
-    p_sym->column = p_ident_tk->column;
-    p_sym->scope_level = scope_level;
+	symbol_buffer[symbol_buffer_n] = {
+	   	.ident = p_ident_tk->value.txt, // valid as long as tk remains in tk buffer
+    	.type = type,
+    	.line = p_ident_tk->line,
+    	.column = p_ident_tk->column,
+    	.scope_level = scope_level
+	}	
+    struct Symbol* p_sym = symbol_buffer[symbol_buffer_n++];
     // TODO: decide how handle addr for global & local objects
     // p_sym->addr = addr++;
+	
     hashmap_put_ptr(&symbol_table,
                     p_ident_tk->value.txt,
                     strlen(p_ident_tk->value.txt),
@@ -264,6 +267,8 @@ sym_get(struct Tk *p_ident_tk) {
                            strlen(p_ident_tk->value.txt));
 }
 
+
+// TBD
 static bool
 sym_pop(int count) // struct Tk* p_ident_tk) ?
 {
@@ -290,16 +295,11 @@ static inline int op_prec(enum TkType tk_type) {
 // temp debug
 static void instr_debug(enum TkType type) {
     switch (type) {
-        case TK_OP_ADD: puts("ADD R1, R2");
-            break;
-        case TK_OP_SUB: puts("SUB R1, R2");
-            break;
-        case TK_OP_MUL: puts("MUL R1, R2");
-            break;
-        case TK_OP_DIV: puts("DIV R1, R2");
-            break;
-        case TK_OP_POW: puts("POW R1, R2");
-            break;
+        case TK_OP_ADD: puts("ADD R1, R2"); break;
+        case TK_OP_SUB: puts("SUB R1, R2"); break;
+        case TK_OP_MUL: puts("MUL R1, R2"); break;
+        case TK_OP_DIV: puts("DIV R1, R2"); break;
+        case TK_OP_POW: puts("POW R1, R2"); break;
         default:		puts("instr_debug: 'type' is not an op tk");
     }
 }
