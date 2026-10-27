@@ -236,6 +236,9 @@ emit_n(int n, uint8_t bytes[n]) {
 #define INSTR_ARG_REG(opcode) (uint8_t) (0x80 | opcode) // if two args, arg2 is reg, if one arg, arg is reg
 #define INSTR_ARG_LIT(opcode) (uint8_t) (0x00 | opcode)
 
+// TBD
+// static struct Symbol symbols[512]; 
+
 static struct Symbol*
 sym_push(enum SymType type, struct Tk *p_ident_tk) {
     /* pls arena alloc... or just stack allocate */
